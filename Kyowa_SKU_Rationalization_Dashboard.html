@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kyowa SKU Rationalization Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--ink:#1c2733;--mut:#667585;--line:#dfe5ea;--bg:#f3f5f7;--card:#fff;--navy:#17324d;--teal:#1f8a8a;--amb:#c98a1b;--red:#b5413a;--grn:#2f7d4f}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 "Segoe UI",Calibri,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+header{background:var(--navy);color:#fff;padding:16px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{margin:0;font-size:20px;font-weight:600}header p{margin:2px 0 0;color:#b9c8d6;font-size:12px}
+button,.btn{background:#fff;color:var(--navy);border:0;border-radius:4px;padding:8px 14px;font:600 13px inherit;cursor:pointer}
+button.alt{background:transparent;color:#fff;border:1px solid #6d8aa6}button:focus-visible,select:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+main{max-width:1320px;margin:0 auto;padding:18px 24px 40px}
+.filters{display:flex;flex-wrap:wrap;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:16px}
+.filters label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px}
+select{min-width:150px;padding:6px;border:1px solid var(--line);border-radius:4px;font:inherit;color:var(--ink);background:#fff}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:6px;padding:12px 14px}
+.kpi b{display:block;font-size:24px;font-weight:600}.kpi span{color:var(--mut);font-size:12px}.kpi i{font-style:normal;font-size:12px}
+.up{color:var(--grn)}.dn{color:var(--red)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px;min-width:0}
+.card h2{margin:0 0 10px;font-size:15px;font-weight:600}.card h2 small{font-weight:400;color:var(--mut)}
+.cv{position:relative;height:260px}
+.ins{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ins li{padding:9px 12px;border-left:4px solid var(--teal);background:#f6fafa;border-radius:3px}
+.ins li.w{border-color:var(--amb);background:#fdf8ee}.ins li.r{border-color:var(--red);background:#fcf1f0}
+.ins b{display:block;font-size:13px}
+.tw{overflow:auto;max-height:440px}table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{position:sticky;top:0;background:#eef2f5;cursor:pointer;font-weight:600}th:nth-child(-n+4),td:nth-child(-n+4){text-align:left}
+tr:hover td{background:#f8fafb}
+.tag{padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600}
+.t-k{background:#e3f2e9;color:var(--grn)}.t-p{background:#f8e4e2;color:var(--red)}.t-s{background:#fbefd7;color:#8a5d0c}
+#empty{background:var(--card);border:1px dashed #9fb0bf;border-radius:6px;padding:24px;margin-bottom:16px}
+#empty code{background:#eef2f5;padding:1px 5px;border-radius:3px}#empty td,#empty th{text-align:left;white-space:normal}
+#err{color:var(--red);font-weight:600;margin-top:8px}.hide{display:none}
+@media print{header button,.filters,#empty{display:none}body{background:#fff}.card,.kpi{break-inside:avoid}.tw{max-height:none}}
+</style></head><body>
+<header><div><h1>Kyowa SKU Rationalization Dashboard</h1><p id="sub">Import the RAW sales workbook to begin.</p></div>
+<div><input type="file" id="file" accept=".xlsx,.xls,.xlsm,.csv" class="hide"><button onclick="file.click()">Import workbook</button>
+<button class="alt" onclick="window.print()">Export PDF</button> <button class="alt" onclick="exportX()">Export tables (Excel)</button></div></header>
+<main>
+<section id="empty"><h2>Import a workbook to build the dashboard</h2>
+<p>Use a sheet named <code>RAW</code> (or the first sheet) with one row per transaction and these column headers in row 1. Order does not matter; names are not case sensitive.</p>
+<table><tr><th>Column</th><th>Required</th><th>Example</th></tr>
+<tr><td>YEAR</td><td>Yes</td><td>2026</td></tr><tr><td>MONTH</td><td>Yes</td><td>JAN (or 1)</td></tr>
+<tr><td>BUSINESS UNIT</td><td>Yes</td><td>Outright / Concession / Online</td></tr>
+<tr><td>CLASS</td><td>Yes</td><td>AIR FRYER</td></tr><tr><td>PARENT CODE</td><td>Yes</td><td>K3827</td></tr>
+<tr><td>COLOR CODE</td><td>Yes</td><td>K38271 (the child SKU)</td></tr><tr><td>SKU STATUS</td><td>Yes</td><td>ACTIVE, PHASED OUT, OBSOLETE, SLOW MOVING</td></tr>
+<tr><td>SALES</td><td>Yes</td><td>4600 (negative = return)</td></tr><tr><td>QUANTITY</td><td>Yes</td><td>1</td></tr>
+<tr><td>ACCOUNT, AREA, COLOR DESCRIPTION, PARENT DESCRIPTION, BRAND, SUBCLASS</td><td>Optional</td><td>SM, Metro Manila, KW 3827 AIR FRYER 6.5L BLACK</td></tr></table>
+<div id="err"></div></section>
+<div id="app" class="hide">
+<div class="filters">
+<label>Year<select id="fy"></select></label><label>Category (class)<select id="fcls"></select></label>
+<label>Parent SKU<select id="fp"></select></label><label>Child SKU<select id="fc"></select></label>
+<label>Channel<select id="fbu"></select></label><label>Status<select id="fst"></select></label></div>
+<div class="kpis" id="kpis"></div>
+<div class="card" style="margin-bottom:16px"><h2>Analyzer findings <small>(rule-based, recalculated for the current filters)</small></h2><ul class="ins" id="ins"></ul></div>
+<div class="grid">
+<div class="card"><h2>Monthly sales by year</h2><div class="cv"><canvas id="c1"></canvas></div></div>
+<div class="card"><h2>Sales by category</h2><div class="cv"><canvas id="c2"></canvas></div></div>
+<div class="card"><h2>Channel mix</h2><div class="cv"><canvas id="c3"></canvas></div></div>
+<div class="card"><h2>Top 10 parents by sales</h2><div class="cv"><canvas id="c4"></canvas></div></div></div>
+<div class="card" style="margin-bottom:16px"><h2>Child SKU decision table <small>click a header to sort; share is the child's share of its parent's sales</small></h2><div class="tw"><table id="tc"></table></div></div>
+<div class="card"><h2>Parent summary</h2><div class="tw"><table id="tp"></table></div></div>
+</div></main>
+<script>
+const $=id=>document.getElementById(id),MON=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const REQ=['YEAR','MONTH','BUSINESS UNIT','PARENT CODE','COLOR CODE','CLASS','SKU STATUS','SALES','QUANTITY'];
+const N=n=>Math.round(n).toLocaleString('en-US'),P=n=>(n*100).toFixed(1)+'%';
+const M=n=>'₱'+(Math.abs(n)>=1e6?(n/1e6).toFixed(2)+'M':Math.abs(n)>=1e3?(n/1e3).toFixed(0)+'K':N(n));
+const PAL=['#17324d','#1f8a8a','#c98a1b','#b5413a','#6b7fa3','#7a9e6b','#8e6c9e','#a3a3a3'];
+let D=[],CH={},SK='s',SD=-1,TB=[],TP=[],INS=[],ALL='All';
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=v=>load(v.target.result,f.name);r.readAsArrayBuffer(f)};
+function load(buf,name){try{
+ const wb=XLSX.read(buf,{type:'array'}),sn=wb.SheetNames.find(s=>s.trim().toUpperCase()==='RAW')||wb.SheetNames[0];
+ const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:''});if(!rows.length)throw Error('Sheet "'+sn+'" has no data rows.');
+ const K={};Object.keys(rows[0]).forEach(k=>K[k.trim().toUpperCase().replace(/\s+/g,' ')]=k);
+ const miss=REQ.filter(c=>!K[c]);if(miss.length)throw Error('Missing column(s) in sheet "'+sn+'": '+miss.join(', ')+'. See the format table above.');
+ const g=(r,c)=>K[c]?r[K[c]]:'',t=(r,c)=>String(g(r,c)).trim();
+ D=rows.map(r=>{let m=g(r,'MONTH');m=typeof m==='number'?m:MON.indexOf(String(m).trim().slice(0,3).toUpperCase())+1;
+  return{y:+g(r,'YEAR'),m,bu:t(r,'BUSINESS UNIT'),acc:t(r,'ACCOUNT'),p:t(r,'PARENT CODE'),c:t(r,'COLOR CODE'),d:t(r,'COLOR DESCRIPTION')||t(r,'PARENT DESCRIPTION'),
+  cls:t(r,'CLASS'),st:t(r,'SKU STATUS')||'UNKNOWN',s:+g(r,'SALES')||0,q:+g(r,'QUANTITY')||0}}).filter(r=>r.p&&r.y&&r.m);
+ if(!D.length)throw Error('No usable rows. Check that YEAR, MONTH and PARENT CODE are filled in.');
+ $('empty').classList.add('hide');$('app').classList.remove('hide');
+ $('sub').textContent=name+' | '+N(D.length)+' rows | '+[...new Set(D.map(r=>r.y))].sort().join(', ');
+ fill('fy',[...new Set(D.map(r=>r.y))].sort().reverse(),1);fill('fcls',uniq('cls'));fill('fbu',uniq('bu'));fill('fst',uniq('st'));cascade();
+}catch(e){$('err').textContent=e.message;$('empty').classList.remove('hide')}}
+const uniq=(k,rs=D)=>[...new Set(rs.map(r=>r[k]))].filter(Boolean).sort();
+function fill(id,vals,all){const s=$(id),cur=s.value;s.innerHTML=(all?'<option>'+ALL+'</option>':'<option>'+ALL+'</option>')+vals.map(v=>'<option>'+v+'</option>').join('');if(vals.map(String).includes(cur))s.value=cur;s.onchange=id==='fcls'||id==='fp'?cascade:draw}
+function cascade(){const cl=$('fcls').value,p=$('fp').value;
+ const ps=uniq('p',D.filter(r=>cl===ALL||r.cls===cl));fill('fp',ps);if(!ps.includes(p))$('fp').value=ALL;
+ const pp=$('fp').value;fill('fc',uniq('c',D.filter(r=>(cl===ALL||r.cls===cl)&&(pp===ALL||r.p===pp))));$('fc').value=ALL;
+ $('fp').onchange=()=>{const x=$('fp').value;fill('fc',uniq('c',D.filter(r=>(cl===ALL||r.cls===$('fcls').value)&&(x===ALL||r.p===x))));draw()};draw()}
+function base(){const f={cls:$('fcls').value,p:$('fp').value,c:$('fc').value,bu:$('fbu').value,st:$('fst').value};
+ return D.filter(r=>Object.keys(f).every(k=>f[k]===ALL||r[k]===f[k]))}
+const sum=(rs,k='s')=>rs.reduce((a,r)=>a+r[k],0);
+function grp(rs,k){const m=new Map();rs.forEach(r=>{let o=m.get(r[k]);if(!o){o={k:r[k],s:0,q:0,a:new Set,d:r.d,cls:r.cls,st:r.st,p:r.p};m.set(r[k],o)}o.s+=r.s;o.q+=r.q;if(r.s>0&&r.acc)o.a.add(r.acc)});return [...m.values()]}
+function draw(){const b=base(),fy=$('fy').value,yrs=[...new Set(D.map(r=>r.y))].sort(),Y=fy===ALL?yrs[yrs.length-1]:+fy,rs=fy===ALL?b:b.filter(r=>r.y===Y);
+ const cut=Math.max(0,...b.filter(r=>r.y===Y).map(r=>r.m)),ytd=y=>b.filter(r=>r.y===y&&r.m<=cut);
+ const cur=sum(ytd(Y)),prv=sum(ytd(Y-1)),gr=prv>0?cur/prv-1:null;
+ const tot=sum(rs),u=sum(rs,'q'),neg=-rs.filter(r=>r.s<0).reduce((a,r)=>a+r.s,0),pos=tot+neg;
+ const dead=rs.filter(r=>/PHASED|OBSOLETE/.test(r.st));
+ const ps=grp(rs,'p'),cs=grp(rs,'c');
+ $('kpis').innerHTML=[['Net sales',M(tot),(fy===ALL?'All years':'Year '+fy)],['Units',N(u),'ASP '+(u?M(tot/u):'-')],
+ ['Growth, same months','<span class="'+(gr>=0?'up':'dn')+'">'+(gr===null?'n/a':(gr>=0?'+':'')+P(gr))+'</span>','Jan-'+MON[cut-1]+' '+Y+' vs '+(Y-1)],
+ ['Parents / children',ps.length+' / '+cs.length,'in current selection'],['Returns',P(pos?neg/pos:0),M(neg)+' of gross sales'],
+ ['Phased-out / obsolete sales',M(sum(dead)),P(tot?sum(dead)/tot:0)+' of net sales']].map(k=>'<div class="kpi"><span>'+k[0]+'</span><b>'+k[1]+'</b><i>'+k[2]+'</i></div>').join('');
+ // charts
+ const mk=(id,cfg)=>{if(CH[id])CH[id].destroy();CH[id]=new Chart($(id),cfg)},op={responsive:true,maintainAspectRatio:false};
+ mk('c1',{type:'line',data:{labels:MON,datasets:yrs.map((y,i)=>({label:y,borderColor:PAL[i%8],backgroundColor:PAL[i%8],tension:.25,data:MON.map((_,m)=>sum(b.filter(r=>r.y===y&&r.m===m+1)))}))},options:{...op,scales:{y:{ticks:{callback:v=>M(v)}}}}});
+ const cl=grp(rs,'cls').sort((a,b)=>b.s-a.s).slice(0,10);
+ mk('c2',{type:'bar',data:{labels:cl.map(x=>x.k),datasets:[{data:cl.map(x=>x.s),backgroundColor:PAL[0]}]},options:{...op,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>M(v)}}}}});
+ const bu=grp(rs,'bu').sort((a,b)=>b.s-a.s);
+ mk('c3',{type:'doughnut',data:{labels:bu.map(x=>x.k),datasets:[{data:bu.map(x=>Math.max(0,x.s)),backgroundColor:PAL}]},options:{...op,plugins:{legend:{position:'right'}}}});
+ const tp=[...ps].sort((a,b)=>b.s-a.s).slice(0,10);
+ mk('c4',{type:'bar',data:{labels:tp.map(x=>x.k),datasets:[{data:tp.map(x=>x.s),backgroundColor:PAL[1]}]},options:{...op,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>M(v)}}}}});
+ // child table
+ const sib={};D.forEach(r=>{(sib[r.p]=sib[r.p]||new Set).add(r.c)});
+ const psum={};ps.forEach(x=>psum[x.k]=x.s);
+ TB=cs.map(x=>{const sh=psum[x.p]>0?x.s/psum[x.p]:0,n=sib[x.p].size,c0=sum(b.filter(r=>r.c===x.k&&r.y===Y&&r.m<=cut)),p0=sum(b.filter(r=>r.c===x.k&&r.y===Y-1&&r.m<=cut));
+  let f='-';if(/PHASED|OBSOLETE/.test(x.st))f=x.s>0?'Sell-through':'Inactive';else if(n>1&&sh<.35)f='Phase-out candidate';else if(n>1&&sh>=.65)f='Keep (lead child)';else if(n>1)f='Balanced';
+  return{...x,sh,n,acc:x.a.size,u:x.q,asp:x.q?x.s/x.q:0,g:p0>0?c0/p0-1:null,f}});
+ const hd=[['p','Parent'],['k','Child SKU'],['d','Description'],['st','Status'],['s','Sales'],['u','Units'],['asp','ASP'],['sh','Share of parent'],['acc','Accounts'],['g','Growth'],['f','Flag']];
+ const cc=f=>f==='Phase-out candidate'?'t-p':f==='Keep (lead child)'?'t-k':f==='Sell-through'?'t-s':'';
+ TB.sort((a,b)=>((a[SK]>b[SK])-(a[SK]<b[SK]))*SD||0);
+ $('tc').innerHTML='<tr>'+hd.map(h=>'<th data-k="'+h[0]+'">'+h[1]+'</th>').join('')+'</tr>'+TB.slice(0,300).map(x=>'<tr><td>'+x.p+'</td><td>'+x.k+'</td><td>'+x.d+'</td><td>'+x.st+'</td><td>'+M(x.s)+'</td><td>'+N(x.u)+'</td><td>'+N(x.asp)+'</td><td>'+P(x.sh)+'</td><td>'+x.acc+'</td><td>'+(x.g===null?'n/a':P(x.g))+'</td><td><span class="tag '+cc(x.f)+'">'+x.f+'</span></td></tr>').join('');
+ $('tc').querySelectorAll('th').forEach(h=>h.onclick=()=>{SD=SK===h.dataset.k?-SD:-1;SK=h.dataset.k;draw()});
+ TP=ps.map(x=>({...x,ch:sib[x.k].size,sh:tot?x.s/tot:0,top:Math.max(...cs.filter(c=>c.p===x.k).map(c=>c.s))/(x.s||1)})).sort((a,b)=>b.s-a.s);
+ $('tp').innerHTML='<tr><th>Parent</th><th>Category</th><th>Status</th><th>Description</th><th>Sales</th><th>Units</th><th>Share of selection</th><th>Children</th><th>Lead child share</th></tr>'+TP.slice(0,300).map(x=>'<tr><td>'+x.k+'</td><td>'+x.cls+'</td><td>'+x.st+'</td><td>'+x.d.replace(/ (BLACK|WHITE|IVORY|RED|BLUE|GREEN|YELLOW|VIOLET|PINK).*$/,'')+'</td><td>'+M(x.s)+'</td><td>'+N(x.q)+'</td><td>'+P(x.sh)+'</td><td>'+x.ch+'</td><td>'+P(x.top)+'</td></tr>').join('');
+ // analyzer
+ INS=[];const A=(c,h,t)=>INS.push([c,h,t]);
+ if(tot>0&&cl.length>1)A(cl[0].s/tot>.4?'w':'',cl[0].k+' drives '+P(cl[0].s/tot)+' of sales','Top 3 categories: '+P(cl.slice(0,3).reduce((a,x)=>a+x.s,0)/tot)+'. Phase-out and stock decisions here move the total most.');
+ if(tp.length>2&&tot>0)A(tp.slice(0,3).reduce((a,x)=>a+x.s,0)/tot>.5?'w':'','Top 3 parents hold '+P(tp.slice(0,3).reduce((a,x)=>a+x.s,0)/tot)+' of sales',tp.slice(0,3).map(x=>x.k).join(', ')+'.');
+ if(gr!==null)A(gr<-.1?'r':gr<0?'w':'','Sales '+(gr>=0?'up ':'down ')+P(Math.abs(gr))+' on the same months last year','Jan-'+MON[cut-1]+' '+Y+' vs '+(Y-1)+'. Check that '+MON[cut-1]+' is a complete month before presenting.');
+ if(bu.length>1&&tot>0&&bu[0].s/tot>.6)A('w',bu[0].k+' is '+P(bu[0].s/tot)+' of sales','Heavy reliance on one channel raises the risk of any delisting there.');
+ const ac=grp(rs.filter(r=>r.acc),'acc').sort((a,b)=>b.s-a.s);if(ac.length>1&&tot>0&&ac[0].s/tot>.3)A('w','Account concentration: '+ac[0].k+' is '+P(ac[0].s/tot)+' of sales','Agree any range change with this account first.');
+ const pc=TB.filter(x=>x.f==='Phase-out candidate');if(pc.length)A('r',pc.length+' child SKU(s) hold under 35% of their parent\'s sales','Weakest: '+pc.sort((a,b)=>a.sh-b.sh).slice(0,5).map(x=>x.k+' ('+P(x.sh)+')').join(', ')+'. Confirm account overlap and revenue at risk before delisting.');
+ const st=TB.filter(x=>x.f==='Sell-through');if(st.length)A('w',st.length+' phased-out or obsolete child SKU(s) still selling',M(sum(st.map(x=>({s:x.s}))))+' in the selection. Track remaining stock to depletion.');
+ if(tot>0&&neg/pos>.03)A('w','Returns are '+P(neg/pos)+' of gross sales','Review the SKUs and accounts with the highest returns.');
+ if(!INS.length)A('','No flags for the current selection','Widen the filters to see portfolio-level findings.');
+ $('ins').innerHTML=INS.map(i=>'<li class="'+i[0]+'"><b>'+i[1]+'</b>'+i[2]+'</li>').join('')}
+function exportX(){if(!TB.length)return;const wb=XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(TB.map(x=>({Parent:x.p,Child:x.k,Description:x.d,Status:x.st,Sales:x.s,Units:x.u,ASP:x.asp,'Share of parent':x.sh,Accounts:x.acc,Growth:x.g,Flag:x.f}))),'Child decision');
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(TP.map(x=>({Parent:x.k,Category:x.cls,Status:x.st,Sales:x.s,Units:x.q,'Share of selection':x.sh,Children:x.ch,'Lead child share':x.top}))),'Parent summary');
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(INS.map(i=>({Finding:i[1],Detail:i[2]}))),'Analyzer findings');
+ XLSX.writeFile(wb,'Kyowa_Dashboard_Export.xlsx')}
+</script></body></html>
