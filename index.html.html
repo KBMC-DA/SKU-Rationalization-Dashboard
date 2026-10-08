@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KBMC SKU Master Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#f2f2f7;--card:#fff;--ink:#1d1d27;--mut:#767684;--line:#e8e8ef;--red:#d6322f;--red2:#a31f1f;--tint:#fdecec;--th:#f7f3f3;--side:#fff;--hov:#fbf3f3;--sh:0 1px 2px #1d1d270d,0 8px 24px #1d1d2710}
+[data-theme=dark]{--bg:#0b0b0d;--card:#151518;--ink:#ececf1;--mut:#9a9aa8;--line:#26262c;--tint:#2b1315;--th:#231214;--side:#101012;--hov:#1d1517;--sh:0 0 0 1px #ffffff08}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font:14px/1.5 Poppins,Inter,"Segoe UI",Calibri,Arial,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;color:var(--ink);background:var(--bg)}
+.shell{display:flex;min-height:100vh}.wrap{flex:1;min-width:0}
+.side{width:240px;flex:none;position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--side);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:4px;transition:width .2s}
+.sh{display:flex;align-items:center;justify-content:space-between;margin:0 4px 14px}.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px}.logo{width:34px;height:34px;border-radius:8px;background:var(--red);color:#fff;display:grid;place-items:center;font-weight:700;flex:none}
+.min{background:var(--hov);color:var(--mut);padding:6px 10px;border-radius:8px}
+.grp{margin-bottom:6px}.gh{display:flex;justify-content:space-between;align-items:center;width:100%;background:none;color:var(--mut);font-size:11px;letter-spacing:.8px;font-weight:700;padding:8px 10px;border-radius:6px;text-transform:uppercase}.gh i{font-style:normal;transition:transform .2s}.grp.closed .gh i{transform:rotate(-90deg)}.grp.closed nav{display:none}
+.side nav{display:flex;flex-direction:column;gap:2px}.side nav button{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:none;color:var(--mut);padding:9px 12px;border-radius:8px;font-weight:500;position:relative;white-space:nowrap}
+.side nav button i{font-style:normal;width:20px;text-align:center;font-size:16px;flex:none}.side nav button:hover{background:var(--hov);filter:none}
+.side nav button.on{background:var(--tint);color:var(--red);font-weight:600}.side nav button.on:before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:4px;border-radius:0 4px 4px 0;background:var(--red)}
+.tbtn{margin-top:auto;background:var(--hov);color:var(--ink);border-radius:8px;padding:10px 12px;font-weight:500;text-align:left;white-space:nowrap}
+.shell.min .side{width:68px}.shell.min .bt,.shell.min .side nav button span,.shell.min .gh,.shell.min .tbtn span{display:none}.shell.min .sh{flex-direction:column;gap:10px}.shell.min .grp.closed nav{display:flex}.shell.min .side nav button{justify-content:center;padding:10px 0}.shell.min .side nav button.on:before{left:-12px}.shell.min .tbtn{text-align:center;padding:10px 0}.shell.min .grp{border-top:1px solid var(--line);padding-top:6px}
+button{font:600 13px Poppins,Inter,"Segoe UI",sans-serif;cursor:pointer;border-radius:8px;border:0;padding:9px 16px;background:var(--card);color:var(--ink)}button:hover{filter:brightness(.96)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+header.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:20px 28px 14px;background:linear-gradient(180deg,var(--card),transparent);border-bottom:1px solid var(--line)}
+.hb{display:none;padding:8px 12px}.tt{flex:1;min-width:200px}.crumb{font-size:11px;letter-spacing:1px;font-weight:700;color:var(--red);text-transform:uppercase}
+header.top h1{margin:0;font-size:24px;font-weight:650;line-height:1.2}header.top p{margin:2px 0 0;color:var(--mut);font-size:12px}
+.acts{display:flex;gap:8px;flex-wrap:wrap}.acts button,#empty .pri{border-radius:0}.pri{background:var(--red);color:#fff}.sec{background:var(--card);border:1px solid var(--line);color:var(--ink)}
+.stick{position:sticky;top:0;z-index:15;background:var(--bg);padding:8px 28px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start}
+.ftog{display:none;border:1px solid var(--line)}.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:1}
+.ms{position:relative}.msb{border:1px solid var(--line);background:var(--card);color:var(--ink);font-weight:500;min-width:138px;text-align:left;padding:8px 12px}
+.msb.act{border-color:var(--red);background:var(--tint);color:var(--red);font-weight:600}
+.pan{position:absolute;z-index:20;top:100%;left:0;width:280px;max-width:86vw;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px #0004;padding:10px;margin-top:4px}
+.pan>input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:var(--bg);color:var(--ink)}
+.act2{display:flex;justify-content:space-between;margin:6px 0}.lnk{background:none;color:var(--red);padding:0;font-weight:600;font-size:12px;border-radius:0}
+.lst{max-height:240px;overflow:auto}.lst label{display:flex;gap:8px;align-items:center;padding:4px 6px;font-size:13px;cursor:pointer;border-radius:6px}.lst label:hover{background:var(--hov)}.lst i{margin-left:auto;color:var(--mut);font-style:normal;font-size:12px}.lst input{accent-color:var(--red)}
+.note{color:var(--mut);font-size:12px;margin:4px 0 10px}.rst{background:var(--tint);color:var(--red)}#count{color:var(--mut);font-size:12px;margin:0 0 14px}
+.inc{margin-left:auto;font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);padding:7px 14px;border-radius:8px;cursor:pointer}.inc input{accent-color:var(--red)}
+main{max-width:1440px;margin:0 auto;padding:16px 28px 56px}
+.kpis{display:grid;grid-template-columns:repeat(60,1fr);gap:14px;margin-bottom:18px}
+.kpi{position:relative;overflow:hidden;background:var(--card);border-radius:0;padding:16px 18px;min-width:0;box-shadow:var(--sh);border-left:4px solid var(--red)}.kpi.w{border-left-color:#f0a43a}.kpi.r{border-left-color:var(--red2)}
+.kpi>span{display:block;color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi b{display:block;font-size:clamp(20px,1.8vw,27px);line-height:1.2;font-weight:700;margin:8px 0 6px;color:var(--ink);white-space:nowrap}.kpi b span{font-size:inherit;text-transform:none;letter-spacing:inherit}
+.kpi i{display:block;color:var(--mut);font-size:12px;line-height:1.4;font-style:normal;position:relative;z-index:1}.dl{font-style:normal;font-weight:600;font-size:11.5px;padding:1px 7px;margin-right:6px;background:#2f9e6e22}.dl.up{color:#2f9e6e}.dl.dn{color:var(--red);background:#d6322f1c}
+.spk{position:absolute;right:12px;top:14px;width:84px;height:30px;opacity:.9}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-bottom:16px}.s4{grid-column:span 4}.s5{grid-column:span 5}.s6{grid-column:span 6}.s7{grid-column:span 7}
+.card{background:var(--card);border-radius:10px;padding:18px 20px;min-width:0;margin-bottom:16px;box-shadow:var(--sh);border:1px solid var(--line)}.grid .card{margin:0}
+.card h2{margin:0 0 12px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.card h2:before{content:"";width:4px;height:15px;background:var(--red);border-radius:2px}.card h2 small{font-weight:400;color:var(--mut);font-size:12px}.cv{position:relative;height:330px}
+.ins{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:10px}
+.ins li{padding:11px 14px;border-left:4px solid #2f9e6e;background:#2f9e6e14;border-radius:6px;font-size:13px;color:var(--mut)}
+.ins li.w{border-color:#f0a43a;background:#f0a43a17}.ins li.r{border-color:var(--red);background:#d6322f14}.ins li.o{border-color:#9a9aa8;background:#9a9aa81a}.ins b{display:block;color:var(--ink);font-size:13.5px;margin-bottom:2px}
+.tw{overflow:auto;max-height:480px;border:1px solid var(--line);border-radius:8px;-webkit-overflow-scrolling:touch}table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th{position:sticky;top:0;background:var(--th);font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);z-index:1;cursor:pointer}th.sorted{color:var(--red)}
+.sbar{display:flex;gap:8px;align-items:center;margin:0 0 10px;font-size:12px;color:var(--mut);flex-wrap:wrap}.sbar select{padding:6px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;color:var(--ink);background:var(--card);max-width:100%}
+.sbo{background:var(--card);border:1px solid var(--line);color:var(--ink);padding:5px 14px}.sbo.on{background:var(--red);border-color:var(--red);color:#fff}
+tr:hover>td{background:var(--hov)!important}td.l,th.l{text-align:left}td.wr{white-space:normal;min-width:200px;max-width:340px}tr.cr td{font-weight:600;cursor:pointer;background:var(--th)!important}tr.sr td:first-child{padding-left:30px;color:var(--mut)}
+.tag{padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#2f9e6e22;color:#2f9e6e}.tag.x{background:#d6322f22;color:var(--red)}.tag.s{background:#f0a43a26;color:#d98a14}.tag.o{background:#9a9aa826;color:var(--mut)}
+.bar{display:inline-block;height:8px;background:linear-gradient(90deg,var(--red),#f08a86);border-radius:4px;vertical-align:middle;margin-right:8px}.up{color:#2f9e6e}.dn{color:var(--red)}
+.nsb{display:none}.nod>*{display:none}.nod>.nsb{display:block}
+#empty{background:var(--card);border:2px dashed var(--line);border-radius:12px;padding:40px;max-width:640px;margin:48px auto;text-align:center}
+#err{color:var(--red);font-weight:600;margin-top:10px}.hide{display:none}.bd{display:none}
+@media(max-width:1000px){.kpis>.kpi{grid-column:span 30!important}}
+@media(max-width:900px){.s4,.s5,.s6,.s7{grid-column:1/-1}.hb{display:block}
+ .side{position:fixed;z-index:40;left:0;top:0;bottom:0;transform:translateX(-102%);transition:transform .25s;width:260px!important;box-shadow:0 0 40px #0006}.shell.open .side{transform:none}.shell.open .bd{display:block;position:fixed;inset:0;background:#0007;z-index:30}
+ .shell.min .bt,.shell.min .side nav button span,.shell.min .gh,.shell.min .tbtn span{display:revert}.min{display:none}
+ header.top{padding:14px 14px 10px;gap:8px}header.top h1{font-size:20px}.acts{width:100%}.acts button{flex:1;padding:9px 6px;font-size:12px}
+ .stick{padding:8px 12px}.ftog{display:block}.filters{display:none;width:100%;order:3}.filters.open{display:flex}.msb{min-width:0;flex:1}.ms{flex:1 1 44%}.inc{margin-left:0;flex:1}.pan{width:min(280px,86vw)}
+ main{padding:12px 12px 48px}.cv{height:270px}.card{padding:14px}.kpi b{font-size:21px}.spk{width:60px}.ins{grid-template-columns:1fr}}
+@media(max-width:480px){.kpis>.kpi{grid-column:span 60!important}.cv{height:250px}}
+@media print{.side,.stick,#empty,.sbar,header.top .acts,.hb{display:none}body{background:#fff}.card,.kpi{break-inside:avoid;box-shadow:none;border:1px solid var(--line)}.tw{max-height:none}}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:16px}.grid3 .card{margin:0}.mu{color:var(--mut);font-size:12px}.sech{margin:22px 0 4px;font-size:16px;font-weight:650}
+</style>
+</head><body>
+<div class="shell" id="shell"><div class="bd" id="bd"></div>
+<aside class="side" id="side"><div class="sh"><div class="brand"><div class="logo">K</div><span class="bt">KBMC</span></div><button class="min" id="min" title="Minimize menu">«</button></div>
+<div class="grp" id="g1"><button class="gh">Sales performance <i>▾</i></button><nav>
+<button data-p="ex" data-g="Sales performance" data-t="Executive summary" class="on"><i>◈</i><span>Executive summary</span></button>
+<button data-p="so" data-g="Sales performance" data-t="Sales overview"><i>▥</i><span>Sales overview</span></button>
+<button data-p="sp" data-g="Sales performance" data-t="Products"><i>▣</i><span>Products</span></button>
+<button data-p="sa" data-g="Sales performance" data-t="Accounts &amp; areas"><i>◉</i><span>Accounts &amp; areas</span></button></nav></div>
+<div class="grp" id="g2"><button class="gh">SKU portfolio <i>▾</i></button><nav>
+<button data-p="ov" data-g="SKU portfolio" data-t="SKU overview"><i>◧</i><span>SKU overview</span></button>
+<button data-p="cat" data-g="SKU portfolio" data-t="Category summary"><i>☰</i><span>Category summary</span></button>
+<button data-p="po" data-g="SKU portfolio" data-t="Phase-out"><i>⊘</i><span>Phase-out</span></button></nav></div>
+<button class="tbtn" id="thm" onclick="theme(document.documentElement.dataset.theme!=='dark')">☾ <span>Dark mode</span></button></aside>
+<div class="wrap"><header class="top"><button class="hb" id="hb" aria-label="Menu">☰</button><div class="tt"><div class="crumb" id="crumb">Sales performance</div><h1 id="ptitle">Executive summary</h1><p id="sub">Import the dashboard workbook to begin.</p></div>
+<div class="acts"><input type="file" id="file" accept=".xlsx,.xls,.xlsm,.csv" class="hide"><button class="pri" onclick="file.click()">Import workbook</button><button class="sec" onclick="window.print()">Export PDF</button><button class="sec" onclick="exportX()">Export tables</button></div></header>
+<section id="empty"><h2>No data imported yet</h2><p style="color:var(--mut)">Import your dashboard workbook to see the KPIs, charts and tables.</p><button class="pri" onclick="file.click()">Import workbook</button><div id="err"></div></section>
+<div id="app" class="hide"><div class="stick"><button class="ftog" id="ftog">Filters</button><div class="filters" id="filters"></div><label id="incl" class="inc hide"><input type="checkbox" id="inc" checked onchange="calc();draw()"><span id="inclt"></span></label></div>
+<main><p id="count"></p>
+<section id="p-ex"><div class="card nsb"><h2>No sales data in this workbook</h2><p>Import the dashboard input workbook with the SALES BY MONTH sheet to see the sales pages.</p></div>
+<div class="kpis" id="k-ex"></div><div class="card"><h2>Executive summary <small>rule-based, recalculates with the filters</small></h2><ul class="ins" id="ins-ex"></ul></div>
+<div class="grid"><div class="card s7"><h2 id="t-e1">Monthly sales</h2><div class="cv"><canvas id="e1"></canvas></div></div><div class="card s5"><h2 id="t-e2">What drove the change</h2><div class="cv"><canvas id="e2"></canvas></div></div>
+<div class="card s6"><h2 id="t-e3">Channel</h2><div class="cv"><canvas id="e3"></canvas></div></div><div class="card s6"><h2 id="t-e4">Product segment</h2><div class="cv"><canvas id="e4"></canvas></div></div></div>
+<div class="card"><h2>Category scorecard</h2><div class="tw"><table id="t-ex"></table></div></div></section>
+<section id="p-so" class="hide"><div class="card nsb"><h2>No sales data in this workbook</h2><p>Import the dashboard input workbook with the SALES BY MONTH sheet.</p></div>
+<div class="kpis" id="k-so"></div><div class="card"><h2>Findings <small>rule-based</small></h2><ul class="ins" id="ins-so"></ul></div>
+<div class="grid"><div class="card s7"><h2 id="t-o1">Monthly sales</h2><div class="cv"><canvas id="o1"></canvas></div></div><div class="card s5"><h2>Cumulative sales</h2><div class="cv"><canvas id="o2"></canvas></div></div>
+<div class="card s6"><h2 id="t-o3">Sales by channel</h2><div class="cv"><canvas id="o3"></canvas></div></div><div class="card s6"><h2>Average price by month</h2><div class="cv"><canvas id="o4"></canvas></div></div></div>
+<div class="card"><h2>Month by month <small>same months compared</small></h2><div class="tw"><table id="t-so"></table></div></div></section>
+<section id="p-sp" class="hide"><div class="card nsb"><h2>No sales data in this workbook</h2><p>Import the dashboard input workbook with the SALES BY MONTH sheet.</p></div>
+<div class="kpis" id="k-sp"></div><div class="card"><h2>Findings <small>rule-based</small></h2><ul class="ins" id="ins-sp"></ul></div>
+<div class="grid"><div class="card s7"><h2 id="t-p1">Sales by category</h2><div class="cv"><canvas id="p1"></canvas></div></div><div class="card s5"><h2>Product segment</h2><div class="cv"><canvas id="p2"></canvas></div></div>
+<div class="card s6"><h2>Top 10 SKUs</h2><div class="cv"><canvas id="p3"></canvas></div></div><div class="card s6"><h2>SKU performance classes</h2><p class="note">Star: top 20% of live SKUs by sales, not falling more than 10%. Rising: up 30%+ in the last 3 months. Declining: down 30%+. Dormant: no sales in the last 3 months. New: no sales before.</p><div class="cv"><canvas id="p4"></canvas></div></div></div>
+<div class="card"><h2>Doing well: Star and Rising SKUs <small>top 100 by sales</small></h2><div class="tw"><table id="t-st"></table></div></div>
+<div class="card"><h2>SKU sales table <small>first 300 rows; export has all</small></h2><div class="tw"><table id="t-sk"></table></div></div></section>
+<section id="p-sa" class="hide"><div class="card nsb"><h2>No sales data in this workbook</h2><p>Import the dashboard input workbook with the SALES BY ACCOUNT sheet.</p></div>
+<p class="note" id="anote"></p><div class="kpis" id="k-ac"></div><div class="card"><h2>Findings <small>rule-based</small></h2><ul class="ins" id="ins-ac"></ul></div>
+<div class="grid"><div class="card s6"><h2 id="t-a1">Sales by area</h2><div class="cv"><canvas id="a1"></canvas></div></div><div class="card s6"><h2 id="t-a2">Top 10 accounts</h2><div class="cv"><canvas id="a2"></canvas></div></div>
+<div class="card s6"><h2 id="t-a3">Account type</h2><div class="cv"><canvas id="a3"></canvas></div></div><div class="card s6"><h2 id="t-a4">Channel</h2><div class="cv"><canvas id="a4"></canvas></div></div></div>
+<h3 class="sech">Top SKUs per area</h3><p class="note">Always live SKUs only (phased-out, obsolete, spare parts and blank-status SKUs are left out) and the Online channel is excluded. Luzon and Metro Manila (NCR) are combined.</p><div class="grid3" id="ta-grid"></div>
+<div class="card"><h2>Areas</h2><div class="tw"><table id="t-ar"></table></div></div>
+<div class="card"><h2>Accounts <small>first 300 rows</small></h2><div class="tw"><table id="t-ac"></table></div></div>
+<div class="card"><h2>Stores <small>first 300 rows; all products, ignores brand and category filters</small></h2><div class="tw"><table id="t-sr"></table></div></div></section>
+<section id="p-ov" class="hide"><div class="kpis" id="k-ov"></div>
+<div class="card"><h2>Analyzer findings <small>(rule-based; recalculates with the filters)</small></h2><ul class="ins" id="ins"></ul></div>
+<div class="grid"><div class="card s5"><h2>Status mix</h2><div class="cv"><canvas id="c1"></canvas></div></div>
+<div class="card s7"><h2 id="t2">SKUs by category</h2><div class="cv"><canvas id="c2"></canvas></div></div>
+<div class="card s4"><h2>Segment: live SKUs vs sales</h2><div class="cv"><canvas id="c12"></canvas></div></div><div class="card s4"><h2>SKUs by brand</h2><div class="cv"><canvas id="c3"></canvas></div></div>
+<div class="card s4"><h2>SKUs by SRP band</h2><div class="cv"><canvas id="c4"></canvas></div></div></div>
+<div class="card"><h2>SKU list <small>use Sort by above the table or click a column header; first 300 rows shown, export has all</small></h2><div class="tw"><table id="t-sku"></table></div></div></section>
+<section id="p-cat" class="hide"><div class="card"><h2>Analyzer findings <small>(rule-based)</small></h2><ul class="ins" id="ins-cat"></ul></div>
+<div class="card"><h2>Summary by category <small>click a category to open its subclasses; sort with Sort by above the table</small></h2><div class="tw"><table id="t-cat"></table></div></div></section>
+<section id="p-po" class="hide"><div class="kpis" id="k-po"></div>
+<div class="card"><h2>Analyzer findings <small>(rule-based)</small></h2><ul class="ins" id="ins-po"></ul></div>
+<div class="card"><h2 id="t5">Live vs exited SKUs by category</h2><div class="cv"><canvas id="c5"></canvas></div></div>
+<div class="card" id="rec-card"><h2 id="h-r"></h2><p class="note" id="rec-note"></p><div class="tw"><table id="t-r"></table></div></div>
+<div class="card"><h2 id="h-a"></h2><p class="note">Parents where some children are already phased out or obsolete and others still sell: the variants already cut and the ones that remain.</p><div class="tw"><table id="t-a"></table></div></div>
+<div class="card"><h2 id="h-c"></h2><p class="note">Parents with three or more live children. Review with child-level sales before delisting.</p><div class="tw"><table id="t-c"></table></div></div>
+<div class="card"><h2 id="h-b"></h2><p class="note">SLOW MOVING SKUs, with how many live siblings share the parent.</p><div class="tw"><table id="t-b"></table></div></div></section>
+</main></div></div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const LIVE=['ACTIVE','ACTIVE - NEVER OUT','SLOW MOVING'],EXIT=['PHASED OUT','OBSOLETE'],ST=[...LIVE,...EXIT,'SPAREPARTS','UNSPECIFIED'];
+const SC=['#2f9e6e','#7bc8a4','#f0a43a','#d6322f','#7a1c1c','#9a9aa8','#c9c9d3'];
+const FK=[['brand','Brand','b'],['cls','Category','b'],['sub','Subclass','i'],['par','Parent SKU','i'],['id','Child SKU','i'],['st','Status','i'],['seg','Segment','i'],['area','Area','a'],['acls','Account type','a'],['bu','Channel','a'],['acct','Account','a']];
+const MONS=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+Chart.defaults.font.family='Poppins,Inter,"Segoe UI",Calibri,Arial,sans-serif';Chart.defaults.font.size=12;Chart.defaults.color='#5b6b7a';Chart.defaults.borderColor='#e9eef3';
+Chart.defaults.elements.bar.borderRadius=4;Chart.defaults.plugins.legend.labels.usePointStyle=true;Chart.defaults.plugins.legend.labels.boxWidth=8;Chart.defaults.plugins.legend.labels.padding=14;
+Chart.defaults.plugins.tooltip.backgroundColor='#14304d';Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.cornerRadius=8;
+const N=n=>Math.round(n).toLocaleString('en-US'),P=n=>(n*100).toFixed(1)+'%',R0=n=>n==null?'-':'₱'+N(n),PC=n=>n==null?'-':(n*100).toFixed(0)+'%';
+const M=n=>{const a=Math.abs(n);return(n<0?'-':'')+'₱'+(a>=1e9?(a/1e9).toFixed(2)+'B':a>=1e6?(a/1e6).toFixed(1)+'M':a>=1e3?(a/1e3).toFixed(0)+'K':N(a))};
+const TR_=v=>v==null?'-':'<span class="'+(v>=0?'up':'dn')+'">'+(v>=0?'+':'')+(v*100).toFixed(0)+'%</span>';
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const live=r=>LIVE.includes(r.st),ex=r=>EXIT.includes(r.st),sm=a=>a.reduce((x,y)=>x+(y||0),0),avg=a=>a.length?sm(a)/a.length:null;
+const med=a=>{a=a.filter(x=>x!=null).sort((x,y)=>x-y);return a.length?a[Math.floor(a.length/2)]:null};
+let D=[],PF={},DUP=0,SEL={},PG='ex',CH={},OPEN=new Set,V={},STP=ST,MS=[],W=0,HAS={s:false,g:false,t:false},CM={};FK.forEach(f=>SEL[f[0]]=new Set);
+const pass=(r,skip)=>IK.every(k=>k===skip||!SEL[k].size||SEL[k].has(r[k]));
+let TH={ink:'#1d1d27',mut:'#767684',grid:'#ececf2',ly:'#c4c4cf'};
+function theme(dark){document.documentElement.dataset.theme=dark?'dark':'light';TH=dark?{ink:'#ececf1',mut:'#9a9aa8',grid:'#2a2a31',ly:'#4b4b57'}:{ink:'#1d1d27',mut:'#767684',grid:'#ececf2',ly:'#c4c4cf'};
+ Chart.defaults.color=TH.mut;Chart.defaults.borderColor=TH.grid;Chart.defaults.plugins.tooltip.backgroundColor=dark?'#000':'#1d1d27';$('thm').innerHTML=dark?'☀ <span>Light mode</span>':'☾ <span>Dark mode</span>';try{localStorage.setItem('kbmcTheme',dark?'d':'l')}catch(e){}if(D.length)draw()}
+const VAT=1.12;let AM=[];
+function calc(){const inc=$('inc').checked;AM=MS.length>2&&inc?MS.slice(0,-1):MS;W=AM.length>=6?3:0;const rc=AM.slice(-W),pr=AM.slice(-2*W,-W);
+ D.forEach(o=>{const hs=MS.length>0||Object.keys(o.sa).length>0,gm=Object.keys(o.ga).length>0;o.sales=hs?sm(AM.map(y=>o.sa[y])):o.s0;o.qty=hs?sm(AM.map(y=>o.qa[y])):null;
+  if(o.gpp!=null&&o.sales!=null){o.gp=o.sales/VAT*o.gpp;o.gpm=o.gpp}else if(gm){o.gp=sm(AM.map(y=>o.ga[y]));o.gpm=o.sales>0?o.gp/o.sales:null}else{o.gp=o.g0;o.gpm=o.sales>0&&o.gp!=null?o.gp/o.sales:null}
+  o.rs=W&&hs?sm(rc.map(y=>o.sa[y])):null;o.ps=W&&hs?sm(pr.map(y=>o.sa[y])):null;o.tr=W&&o.ps>0?o.rs/o.ps-1:null;o.ly=W&&hs?sm(rc.map(y=>o.sa[(+y.slice(0,4)-1)+y.slice(4)])):null;o.yy=o.ly>0?o.rs/o.ly-1:null});
+ HAS={s:D.some(r=>r.sales!=null),g:D.some(r=>r.gp!=null),ge:D.some(r=>r.gpp!=null),t:W>0,p:D.some(r=>r.promo!=='No promo')};
+ const lv=D.filter(o=>live(o)&&o.sales>0).map(o=>o.sales).sort((a,b)=>b-a),T20=lv.length?lv[Math.floor(lv.length*.2)]:Infinity;
+ D.forEach(o=>{o.perf=!live(o)?'Exited':!(o.sales>0)?'No sales':W&&o.rs===0?'Dormant':o.sales>=T20&&(o.tr==null||o.tr>-.1)?'Star':o.tr!=null&&o.tr>=.3?'Rising':o.tr!=null&&o.tr<=-.3?'Declining':W&&o.ps===0&&o.rs>0?'New':'Steady'});
+ Object.values(PF).forEach(f=>f.ls=0);D.forEach(o=>{if(live(o))PF[o.par].ls+=o.sales||0});
+ CM={};[...new Set(D.map(r=>r.cls))].forEach(c=>CM[c]=med(D.filter(r=>r.cls===c).map(r=>r.gpm)));ytdCalc()}
+function pc(k){let m=k.match(/^(SALES|GP|GROSS PROFIT)[\s_-]*(\d{4})[\s_\/-]*(\d{1,2})$/);if(m)return[m[1]==='SALES'?'s':'g',m[2]+'-'+m[3].padStart(2,'0')];
+ m=k.match(/^(SALES|GP|GROSS PROFIT)[\s_-]*([A-Z]{3})[A-Z]*[\s_-]*(\d{4})$/);if(m&&MONS.includes(m[2]))return[m[1]==='SALES'?'s':'g',m[3]+'-'+String(MONS.indexOf(m[2])+1).padStart(2,'0')];return null}
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=v=>load(v.target.result,f.name);r.readAsArrayBuffer(f)};
+function load(buf,name){try{
+ const wb=XLSX.read(buf,{type:'array'}),sn=wb.SheetNames.find(s=>s.trim().toUpperCase()==='SKU MASTER DATA')||wb.SheetNames[0];
+ const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:''});if(!rows.length)throw Error('Sheet "'+sn+'" has no data rows.');
+ const K={},SC_=[],GC_=[];Object.keys(rows[0]).forEach(k=>{const u=k.trim().toUpperCase().replace(/\s+/g,' ');K[u]=k;const p=pc(u);if(p)(p[0]==='s'?SC_:GC_).push([k,p[1]])});
+ const miss=['ITEM CODE','PARENT CODE','CLASS','STATUS'].filter(c=>!K[c]);if(miss.length)throw Error('Missing column(s) in sheet "'+sn+'": '+miss.join(', ')+'.');
+ const t=(r,c)=>K[c]?String(r[K[c]]).trim():'',nv=v=>{const x=parseFloat(String(v).replace(/[,₱\s]/g,''));return isNaN(x)?null:x},n=(r,c)=>K[c]?nv(r[K[c]]):null;
+ const LM={},lsn=wb.SheetNames.find(s=>/^SALES BY MONTH/i.test(s.trim())),mset=new Set;
+ if(lsn)XLSX.utils.sheet_to_json(wb.Sheets[lsn],{defval:''}).forEach(q=>{const kk={};Object.keys(q).forEach(k=>kk[k.trim().toUpperCase()]=q[k]);const c=String(kk['ITEM CODE']).trim(),y=+kk['YEAR'],mo=typeof kk['MONTH']==='number'?kk['MONTH']:MONS.indexOf(String(kk['MONTH']).trim().slice(0,3).toUpperCase())+1;if(!c||!y||!mo)return;const ym=y+'-'+String(mo).padStart(2,'0');mset.add(ym);(LM[c]=LM[c]||[]).push([ym,String(kk['BUSINESS UNIT']||'').trim()||'Other',+kk['SALES']||0,+kk['QUANTITY']||0])});
+ MS=[...new Set([...SC_.map(x=>x[1]),...mset])].sort();
+ const seen=new Set;D=[];DUP=0;
+ rows.forEach(r=>{const id=t(r,'ITEM CODE');if(!id)return;if(seen.has(id)){DUP++;return}seen.add(id);
+  const o={id,par:t(r,'PARENT CODE')||id,d:t(r,'ITEM DESCRIPTION'),brand:t(r,'BRAND').toUpperCase()||'NO BRAND',cls:t(r,'CLASS').toUpperCase()||'UNCLASSIFIED',sub:t(r,'SUBCLASS').toUpperCase()||'UNSPECIFIED',
+   srp:n(r,'SRP'),dp:n(r,'DP'),st:t(r,'STATUS').toUpperCase()||'UNSPECIFIED',promo:t(r,'Q2 PROMOTIONS')||'No promo',seg:t(r,'PRODUCT SEG').toUpperCase()||'UNSEGMENTED',sa:{},ga:{},qa:{},sb:{},s0:null,g0:null,gpp:(()=>{const v=n(r,'GP %');return v==null?null:(v>1.5?v/100:v)})()};
+  o.m=o.srp>0&&o.dp>0?1-o.dp/o.srp:null;
+  SC_.forEach(([k,ym])=>{const v=nv(r[k]);if(v!=null)o.sa[ym]=v});GC_.forEach(([k,ym])=>{const v=nv(r[k]);if(v!=null)o.ga[ym]=v});
+  (LM[id]||[]).forEach(([ym,bu,sv,q])=>{o.sa[ym]=(o.sa[ym]||0)+sv;o.qa[ym]=(o.qa[ym]||0)+q;(o.sb[bu]=o.sb[bu]||{})[ym]=(o.sb[bu][ym]||0)+sv});
+  o.s0=n(r,'SALES')??n(r,'TOTAL SALES');o.g0=n(r,'GROSS PROFIT');D.push(o)});
+ if(!D.length)throw Error('No usable rows. ITEM CODE is empty.');
+ const J_=re=>{const w=wb.SheetNames.find(x=>re.test(x.trim()));return w?XLSX.utils.sheet_to_json(wb.Sheets[w],{defval:''}):[]},U_=r=>{const k={};Object.keys(r).forEach(x=>k[x.trim().toUpperCase()]=r[x]);return k},tx=v=>String(v).trim();
+ const ym_=k=>{const y=+k['YEAR'],m=typeof k['MONTH']==='number'?k['MONTH']:MONS.indexOf(tx(k['MONTH']).slice(0,3).toUpperCase())+1;return y&&m?y+'-'+String(m).padStart(2,'0'):null};
+ AF=J_(/^SALES BY ACCOUNT/i).map(U_).map(k=>({ym:ym_(k),bu:tx(k['BUSINESS UNIT'])||'Other',area:tx(k['AREA'])||'Unassigned',acls:tx(k['ACCOUNTS CLASSIFICATION'])||'Unclassified',acct:tx(k['ACCOUNT']),brand:tx(k['BRAND']).toUpperCase()||'NO BRAND',cls:tx(k['CLASS']).toUpperCase()||'UNCLASSIFIED',s:+k['SALES']||0,q:+k['QUANTITY']||0})).filter(r=>r.ym&&r.acct);
+ SF=J_(/^SALES BY STORE/i).map(U_).map(k=>({ym:ym_(k),acct:tx(k['ACCOUNT']),store:tx(k['STORE']),s:+k['SALES']||0,q:+k['QUANTITY']||0})).filter(r=>r.ym&&r.store);
+ AR=J_(/^SKU BY AREA/i).map(U_).map(k=>({ym:ym_(k),id:tx(k['ITEM CODE']),area:tx(k['AREA'])||'Unassigned',s:+k['SALES']||0,q:+k['QUANTITY']||0})).filter(r=>r.ym&&r.id);
+ const am_={};AF.forEach(r=>{const x=am_[r.acct]=am_[r.acct]||{};x[r.area]=(x[r.area]||0)+r.s});AREAOF={};Object.keys(am_).forEach(a=>AREAOF[a]=top1(am_[a]));
+ const IAm={};J_(/^SKU ACCOUNTS/i).map(U_).forEach(k=>{const c=tx(k['ITEM CODE']),y=+k['YEAR'];if(!c||!y||!(+k['SALES']>0))return;((IAm[c]=IAm[c]||{})[y]=IAm[c][y]||new Set).add(tx(k['ACCOUNT']))});D.forEach(o=>o.ia=IAm[o.id]||null);
+ STP=ST.filter(s=>D.some(r=>r.st===s));
+ PF={};D.forEach(r=>{const f=PF[r.par]=PF[r.par]||{rows:[],live:[],ex:[],slow:[],ls:0};f.rows.push(r);if(live(r)){f.live.push(r.id);f.ls+=r.sales||0}if(ex(r))f.ex.push(r.id);if(r.st==='SLOW MOVING')f.slow.push(r.id)});
+ $('incl').classList.toggle('hide',!MS.length);$('inclt').textContent='Latest month ('+MS[MS.length-1]+') is incomplete: leave it out';$('inc').checked=true;calc();
+ $('empty').classList.add('hide');$('app').classList.remove('hide');$('sub').textContent=name+' | '+N(D.length)+' SKUs | '+N(Object.keys(PF).length)+' parents'+(HAS.s?' | sales: '+(MS.length?MS[0]+' to '+MS[MS.length-1]:'total only'):'');
+ FK.forEach(f=>SEL[f[0]].clear());buildF();draw();
+}catch(e){$('err').textContent=e.message;$('empty').classList.remove('hide')}}
+;
+// ---------- filters
+function opts(k,q){const m=new Map(),ac=AK.includes(k)&&!IK.includes(k);(ac?AF:D).forEach(r=>{if(ac?passA(r,k):pass(r,k))m.set(r[k],(m.get(r[k])||0)+(ac?r.s:1))});SEL[k].forEach(v=>{if(!m.has(v))m.set(v,0)});q=q.toLowerCase();
+ return [...m].filter(x=>!q||String(x[0]).toLowerCase().includes(q)).sort((x,y)=>(k==='par'||k==='id')?String(x[0]).localeCompare(y[0]):y[1]-x[1]||String(x[0]).localeCompare(y[0]))}
+function list(k){const box=$('ms-'+k),a=opts(k,box.querySelector('input').value),L=a.slice(0,200);
+ box.querySelector('.lst').innerHTML=(L.map(([v,c])=>'<label><input type="checkbox" value="'+esc(v)+'"'+(SEL[k].has(v)?' checked':'')+'> '+esc(v)+' <i>'+(AK.includes(k)&&!IK.includes(k)?M(c):c)+'</i></label>').join('')||'<p class="note">No matches</p>')+(a.length>200?'<p class="note">Showing 200 of '+a.length+'. Type to narrow.</p>':'');
+ box.querySelectorAll('.lst input').forEach(i=>i.onchange=()=>{i.checked?SEL[k].add(i.value):SEL[k].delete(i.value);draw()})}
+const closeP=()=>document.querySelectorAll('.pan').forEach(p=>p.classList.add('hide'));
+function buildF(){$('filters').innerHTML=FK.map(([k,l])=>'<div class="ms" id="ms-'+k+'"><button class="msb"></button><div class="pan hide"><input placeholder="Type to search '+l.toLowerCase()+'"><div class="act2"><button class="lnk" data-a="all">Select shown</button><button class="lnk" data-a="clr">Clear</button></div><div class="lst"></div></div></div>').join('')+'<button class="rst" id="rst">Remove all filters</button>';
+ FK.forEach(([k])=>{const box=$('ms-'+k),pan=box.querySelector('.pan'),inp=pan.querySelector('input');
+  box.querySelector('.msb').onclick=e=>{e.stopPropagation();const o=pan.classList.contains('hide');closeP();if(o){pan.classList.remove('hide');inp.value='';list(k);inp.focus()}};
+  pan.onclick=e=>e.stopPropagation();inp.oninput=()=>list(k);
+  pan.querySelector('[data-a=all]').onclick=()=>{opts(k,inp.value).slice(0,200).forEach(x=>SEL[k].add(x[0]));list(k);draw()};
+  pan.querySelector('[data-a=clr]').onclick=()=>{SEL[k].clear();list(k);draw()}});
+ document.onclick=closeP;$('rst').onclick=()=>{FK.forEach(([k])=>SEL[k].clear());closeP();draw()}}
+// ---------- helpers
+const cnt=(R,k)=>{const m=new Map();R.forEach(r=>m.set(r[k],(m.get(r[k])||0)+1));return m};
+const TK={callback(v){const l=this.getLabelForValue(v);return l.length>24?l.slice(0,23)+'…':l}};
+const VALS={id:'vals',afterDatasetsDraw(c){const o=c.options.vals;if(!o||!c.data.datasets.length)return;const x=c.ctx,h=c.options.indexAxis==='y',Z=c.data.datasets,su=i=>Z.reduce((a,d)=>a+(+d.data[i]||0),0),all=Z[0].data.reduce((a,v)=>a+(+v||0),0);
+ x.save();x.font='600 11px Inter,"Segoe UI",sans-serif';x.fillStyle=TH.ink;x.textBaseline=h?'middle':'bottom';x.textAlign=h?'left':'center';
+ (o==='total'?[Z.length-1]:Z.map((_,i)=>i)).forEach(di=>c.getDatasetMeta(di).data.forEach((b,i)=>{const v=o==='total'?su(i):+Z[di].data[i];if(!v)return;
+  x.fillText(o==='pct'?N(v)+'  ·  '+P(v/all):o==='money'?M(v):o==='pv'?P(v):N(v),h?b.x+6:b.x,h?b.y:b.y-5)}));x.restore()}};
+const mk=(id,cfg)=>{if(CH[id])CH[id].destroy();cfg.plugins=[...(cfg.plugins||[]),VALS];CH[id]=new Chart($(id),cfg)},OP={responsive:true,maintainAspectRatio:false,layout:{padding:{right:64,top:22}}};
+const HB=(vals,ext={})=>({...OP,indexAxis:'y',vals,scales:{x:{display:false,...(ext.x||{})},y:{grid:{display:false},ticks:TK,...(ext.y||{})}},plugins:{legend:{display:!!ext.leg,position:'bottom'}}});
+const RW={1:[1],2:[2],3:[3],4:[4],5:[3,2],6:[3,3],7:[4,3],8:[4,4],9:[3,3,3]};
+const kp=a=>{a=a.filter(k=>HAS.p||!/Q2 promo/.test(k[0]));const rw=RW[a.length]||a.map((_,i)=>i%4===0?4:0).filter(x=>x),sp=[];rw.forEach(c=>{for(let i=0;i<c;i++)sp.push(60/c)});
+ return a.map((k,i)=>'<div class="kpi '+(k[3]||'')+'" style="grid-column:span '+(sp[i]||15)+'" title="'+esc(k[4]||k[0])+'"><span>'+k[0]+'</span><b>'+k[1]+'</b><i>'+dl(k[5])+(k[5]!=null?' ':'')+k[2]+'</i>'+(k[6]||'')+'</div>').join('')};
+const tag=s=>'<span class="tag '+(EXIT.includes(s)?'x':s==='SLOW MOVING'?'s':LIVE.includes(s)?'':'o')+'">'+s+'</span>';
+const showI=(id,I)=>$(id).innerHTML=I.map(i=>'<li class="'+i[0]+'"><b>'+i[1]+'</b>'+i[2]+'</li>').join('');
+const plural=(n,a,b)=>N(n)+' '+(n===1?a:b);
+const SO={},TRR={};
+function T(id,cols,rows,max,empty,o={}){cols=cols.filter(c=>!c.p||HAS.p);TRR[id]=()=>T(id,cols,rows,max,empty,o);const st=SO[id]&&cols[SO[id].i]?SO[id]:null;let a=rows;
+ if(st){const c=cols[st.i];a=[...rows].sort((x,y)=>{const u=c.v(x),v=c.v(y);if(u==null&&v==null)return 0;if(u==null)return 1;if(v==null)return-1;return(u>v?1:u<v?-1:0)*st.d})}
+ const cell=r=>cols.map(c=>'<td class="'+(c.l?'l':'')+(c.w?' wr':'')+'">'+(c.f?c.f(r):c.v(r))+'</td>').join('');
+ let h='<tr>'+cols.map((c,i)=>'<th class="'+(c.l?'l':'')+(st&&st.i===i?' sorted':'')+'" data-i="'+i+'" title="'+esc(c.t||'Click to sort')+'">'+c.h+(st&&st.i===i?(st.d>0?' ▲':' ▼'):'')+'</th>').join('')+'</tr>';
+ a.slice(0,max||300).forEach(r=>{h+='<tr '+(o.rc?o.rc(r):'')+'>'+cell(r)+'</tr>';if(o.subs)o.subs(r).forEach(x=>h+='<tr class="sr">'+cell(x)+'</tr>')});
+ if(!a.length)h+='<tr><td class="l" colspan="'+cols.length+'">'+(empty||'No rows')+'</td></tr>';
+ $(id).innerHTML=h;
+ const w=$(id).parentNode;let b=w.previousElementSibling;if(!b||!b.classList.contains('sbar')){b=document.createElement('div');b.className='sbar';w.parentNode.insertBefore(b,w)}
+ b.innerHTML='<label>Sort by <select><option value="-1">Default order</option>'+cols.map((c,i)=>'<option value="'+i+'"'+(st&&st.i===i?' selected':'')+'>'+c.h+'</option>').join('')+'</select></label><button class="sbo'+(st&&st.d>0?' on':'')+'" data-d="1">Asc</button><button class="sbo'+(st&&st.d<0?' on':'')+'" data-d="-1">Desc</button>';
+ b.querySelector('select').onchange=e=>{const i=+e.target.value;if(i<0)delete SO[id];else SO[id]={i,d:cols[i].l?1:-1};TRR[id]()};
+ b.querySelectorAll('.sbo').forEach(x=>x.onclick=()=>{if(SO[id]){SO[id].d=+x.dataset.d;TRR[id]()}});
+ $(id).querySelectorAll('th').forEach(t=>t.onclick=()=>{const i=+t.dataset.i;SO[id]=SO[id]&&SO[id].i===i?{i,d:-SO[id].d}:{i,d:cols[i].l?1:-1};TRR[id]()});
+ if(o.after)o.after()}
+function stat(rows){const pars=[...new Set(rows.map(r=>r.par))],c=cnt(rows,'st'),lv=rows.filter(live).length,sl=sm(rows.map(r=>r.sales)),gp=sm(rows.map(r=>r.gp)),rs=sm(rows.map(r=>r.rs)),ps=sm(rows.map(r=>r.ps));
+ return{n:rows.length,par:pars.length,c,lv,lp:rows.length?lv/rows.length:0,srp:avg(rows.map(r=>r.srp).filter(x=>x>0)),m:avg(rows.map(r=>r.m).filter(x=>x!==null)),
+ pr:rows.filter(r=>live(r)&&r.promo!=='No promo').length,mix:pars.filter(p=>PF[p].live.length&&PF[p].ex.length).length,wide:pars.filter(p=>PF[p].live.length>=3).length,ex:rows.filter(ex).length,
+ sl,gp,gpm:sl>0&&HAS.g?gp/sl:null,rs,ps,tr:ps>0?rs/ps-1:null,yy:sm(rows.map(r=>r.ly))>0?rs/sm(rows.map(r=>r.ly))-1:null}}
+function rec(r){let s=0,w=[];if(r.st==='SLOW MOVING'){s+=2;w.push('Slow moving status')}
+ if(r.tr!==null){if(r.tr<=-.3){s+=2;w.push('Sales down '+P(-r.tr))}else if(r.tr<=-.1){s+=1;w.push('Sales down '+P(-r.tr))}}
+ if(r.rs===0){s+=3;w.push('No sales in last '+W+' months')}
+ const f=PF[r.par],sh=f.live.length>1&&f.ls>0?(r.sales||0)/f.ls:null;if(sh!==null){if(sh<.2){s+=2;w.push('Only '+P(sh)+' of parent live sales')}else if(sh<.35){s+=1;w.push(P(sh)+' of parent live sales')}}
+ const cm=CM[r.cls];if(cm!=null&&r.gpm!==null&&r.gpm<cm-.05){s+=1;w.push('Gross margin below category median')}
+ return{r,s,w:w.join('; '),sh,t:s>=5?'Phase out':s>=3?'Review':'Keep'}}
+// ---------- sales dashboard helpers
+const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let CY=0,LYr=0,CYM=[],LYM=[],CYS=new Set,LYS=new Set,AF=[],SF=[],AR=[],AREAOF={},LEADM=[];
+const IK=['brand','cls','sub','par','id','st','seg'],AK=['brand','cls','area','acls','bu','acct'];
+const passA=(r,skip)=>(PG==='sa'?AK:['brand','cls']).every(k=>k===skip||!SEL[k].size||SEL[k].has(r[k]));
+const mlab=ym=>MN[+ym.slice(5)-1],per=()=>CYM.length?mlab(CYM[0])+' to '+mlab(CYM[CYM.length-1])+' '+CY:'';
+const GCOL=v=>v>=0?'#2f9e6e':'#d6322f',AG=a=>/luzon|metro manila|ncr/i.test(a)?'Luzon + Metro Manila (NCR)':a;
+const top1=o=>(Object.entries(o).sort((a,b)=>b[1]-a[1])[0]||['-'])[0];
+const spark=(a,c)=>{if(!a||a.length<2)return'';const mx=Math.max(...a),mn=Math.min(...a),h=26,w=84,sp=mx-mn||1;return'<svg class="spk" viewBox="0 0 '+w+' '+(h+4)+'" preserveAspectRatio="none"><polyline fill="none" stroke="'+c+'" stroke-width="2" points="'+a.map((v,i)=>(i*w/(a.length-1)).toFixed(1)+','+(h-(v-mn)/sp*h+2).toFixed(1)).join(' ')+'"/></svg>'};
+const dl=g=>g==null?'':'<em class="dl '+(g>=0?'up':'dn')+'">'+(g>=0?'▲ ':'▼ ')+Math.abs(g*100).toFixed(1)+'%</em>';
+function ytdCalc(){const ys=AM.map(y=>+y.slice(0,4));CY=ys.length?Math.max(...ys):0;LYr=CY-1;CYM=AM.filter(y=>+y.slice(0,4)===CY);LYM=CYM.map(y=>LYr+y.slice(4));CYS=new Set(CYM);LYS=new Set(LYM);LEADM=[LYr+'-10',LYr+'-11',LYr+'-12'].filter(y=>AM.includes(y));
+ D.forEach(o=>{o.ytd=sm(CYM.map(y=>o.sa[y]));o.ytl=sm(LYM.map(y=>o.sa[y]));o.yu=sm(CYM.map(y=>o.qa[y]));o.yul=sm(LYM.map(y=>o.qa[y]));o.g2=o.ytl>0?o.ytd/o.ytl-1:null;o.nc=o.ia&&o.ia[CY]?o.ia[CY].size:0;o.nl=o.ia&&o.ia[LYr]?o.ia[LYr].size:0})}
+const gsum=(R,key)=>{const m=new Map();R.forEach(o=>{let x=m.get(o[key]);if(!x){x={k:o[key],c:0,l:0,n:0,u:0};m.set(o[key],x)}x.c+=o.ytd||0;x.l+=o.ytl||0;x.u+=o.yu||0;if(o.ytd>0)x.n++});return[...m.values()].map(x=>({...x,d:x.c-x.l,g:x.l>0?x.c/x.l-1:null}))};
+const chanSum=R=>{const m={};R.forEach(o=>Object.entries(o.sb).forEach(([bu,mm])=>{const x=m[bu]=m[bu]||{k:bu,c:0,l:0};x.c+=sm(CYM.map(y=>mm[y]));x.l+=sm(LYM.map(y=>mm[y]))}));return Object.values(m).sort((a,b)=>b.c-a.c)};
+function SX(R){const cy=CYM.map(y=>sm(R.map(o=>o.sa[y]))),ly=LYM.map(y=>sm(R.map(o=>o.sa[y]))),cq=CYM.map(y=>sm(R.map(o=>o.qa[y]))),lq=LYM.map(y=>sm(R.map(o=>o.qa[y]))),c=sm(cy),l=sm(ly),cu=sm(cq),lu=sm(lq);
+ const ld=LEADM.map(y=>sm(R.map(o=>o.sa[y]))),lq2=LEADM.map(y=>sm(R.map(o=>o.qa[y])));
+ return{ld,lq2,cy,ly,cq,lq,c,l,g:l>0?c/l-1:null,cu,lu,gu:lu>0?cu/lu-1:null,asp:cu>0?c/cu:null,aspl:lu>0?l/lu:null,sk:R.filter(o=>o.ytd>0).length,skl:R.filter(o=>o.ytl>0).length}}
+const tl=y=>mlab(y)+' '+y.slice(2,4),leadAvg=X=>X.ld.length?sm(X.ld)/X.ld.length:0,leadTxt=()=>LEADM.length?mlab(LEADM[0])+' to '+mlab(LEADM[LEADM.length-1])+' '+LYr:'';
+const MBAR=(id,X)=>{const nl=Array(LEADM.length).fill(null),nc=Array(CYM.length).fill(null);mk(id,{type:'bar',data:{labels:[...LEADM,...CYM].map(tl),datasets:[{label:'Lead-in '+leadTxt(),data:[...X.ld,...nc],backgroundColor:'#f0a43a',maxBarThickness:28,skipNull:true},{label:LYr+' same months',data:[...nl,...X.ly],backgroundColor:TH.ly,maxBarThickness:28,skipNull:true},{label:String(CY),data:[...nl,...X.cy],backgroundColor:'#d6322f',maxBarThickness:28,skipNull:true}]},options:{...OP,scales:{y:{ticks:{callback:v=>M(v)}},x:{grid:{display:false}}},plugins:{legend:{position:'bottom'}}}})};
+const CBAR=(id,labels,c,l,hz)=>mk(id,{type:'bar',data:{labels,datasets:[{label:String(CY),data:c,backgroundColor:'#d6322f',maxBarThickness:hz?16:30},{label:String(LYr),data:l,backgroundColor:TH.ly,maxBarThickness:hz?16:30}]},options:hz?HB('money',{leg:1}):{...OP,scales:{y:{ticks:{callback:v=>M(v)}},x:{grid:{display:false}}},plugins:{legend:{position:'bottom'}}}});
+function accAgg(){const rows=AF.filter(r=>passA(r)&&(CYS.has(r.ym)||LYS.has(r.ym)));
+ const by=key=>{const m=new Map();rows.forEach(r=>{const k=r[key];let o=m.get(k);if(!o){o={k,c:0,l:0,cu:0,lu:0,ar:{},ac:{},cls:new Set,acct:new Set,act:new Set};m.set(k,o)}
+  if(CYS.has(r.ym)){o.c+=r.s;o.cu+=r.q;o.cls.add(r.cls);if(r.s>0)o.act.add(r.acct)}else{o.l+=r.s;o.lu+=r.q}o.ar[r.area]=(o.ar[r.area]||0)+r.s;o.ac[r.acls]=(o.ac[r.acls]||0)+r.s;o.acct.add(r.acct)});
+  return[...m.values()].map(o=>({...o,d:o.c-o.l,g:o.l>0?o.c/o.l-1:null,area:top1(o.ar),type:top1(o.ac),na:o.act.size,nc:o.cls.size}))};
+ return{rows,acct:by('acct'),area:by('area'),acls:by('acls'),bu:by('bu')}}
+function topAreas(){const byId=new Map(D.map(o=>[o.id,o])),m={};
+ AR.forEach(r=>{const o=byId.get(r.id);if(!o||!live(o)||!pass(o))return;const c=CYS.has(r.ym),l=LYS.has(r.ym);if(!c&&!l)return;const a=AG(r.area),x=m[a]=m[a]||{},y=x[r.id]=x[r.id]||{o,c:0,l:0};if(c)y.c+=r.s;else y.l+=r.s});
+ return Object.entries(m).map(([a,x])=>{const rows=Object.values(x);return{a,tot:sm(rows.map(y=>y.c)),totl:sm(rows.map(y=>y.l)),rows:rows.filter(y=>y.c>0).sort((p,q)=>q.c-p.c).slice(0,10)}}).sort((p,q)=>q.tot-p.tot)}
+function rankCard(t){const L=t.rows.map((y,i)=>'<tr><td class="l">'+(i+1)+'</td><td class="l"><b>'+y.o.id+'</b><br><span class="mu">'+esc(y.o.d.slice(0,40))+'</span></td><td>'+M(y.c)+'</td><td>'+P(t.tot>0?y.c/t.tot:0)+'</td><td>'+TR_(y.l>0?y.c/y.l-1:null)+'</td></tr>').join('');
+ return'<div class="card"><h2>'+esc(t.a)+'</h2><p class="note">'+M(t.tot)+' from live SKUs'+(t.totl>0?', '+TR_(t.tot/t.totl-1)+' vs '+LYr:'')+'</p><div class="tw"><table><tr><th class="l">#</th><th class="l">SKU</th><th>Sales</th><th>Share</th><th>vs '+LYr+'</th></tr>'+(L||'<tr><td colspan="5" class="l">No sales</td></tr>')+'</table></div></div>'}
+const spike=(arr,labels)=>{const mm=med(arr);return arr.map((v,i)=>[labels[i],v]).filter(x=>mm>0&&x[1]>2*mm)};
+function drawEx(R,S,one,gk){const X=V.X,A=V.ACC,tc=gsum(R,gk).sort((a,b)=>b.c-a.c),aA=A.acct.filter(a=>a.c>0).length,aL=A.acct.filter(a=>a.l>0).length,st=R.filter(o=>o.perf==='Star'),sts=sm(st.map(o=>o.ytd));
+ $('k-ex').innerHTML=kp([['Sales, '+per(),M(X.c),'vs '+M(X.l)+' same months '+LYr,'','',X.g,spark(X.cy,'#d6322f')],['Units sold',N(X.cu),'vs '+N(X.lu)+' in '+LYr,'','',X.gu,spark(X.cq,'#d6322f')],
+  ['Average price',R0(X.asp),'vs '+R0(X.aspl)+' in '+LYr,'','',X.aspl>0&&X.asp?X.asp/X.aspl-1:null],['SKUs selling',N(X.sk),'vs '+N(X.skl)+' in '+LYr,'','',X.skl>0?X.sk/X.skl-1:null],
+  ['Accounts buying',N(aA),'vs '+N(aL)+' in '+LYr,'','',aL>0?aA/aL-1:null],['Star SKUs',N(st.length),P(X.c>0?sts/X.c:0)+' of sales']]);
+ $('t-e1').textContent='Monthly sales: '+leadTxt()+' lead-in, then '+CY+' vs same months '+LYr;$('t-e2').textContent='What drove the change, by '+(one?'subclass':'category');$('t-e3').textContent='Channel: '+CY+' vs '+LYr;$('t-e4').textContent='Product segment: '+CY+' vs '+LYr;
+ MBAR('e1',X);
+ const dd=[...tc].sort((a,b)=>b.d-a.d),pk=[...dd.slice(0,6),...dd.slice(-4)].filter((x,i,a)=>a.indexOf(x)===i&&x.d!==0);
+ mk('e2',{type:'bar',data:{labels:pk.map(x=>x.k),datasets:[{data:pk.map(x=>x.d),backgroundColor:pk.map(x=>GCOL(x.d)),maxBarThickness:20}]},options:HB('money')});
+ const ch=chanSum(R),sg=gsum(R,'seg').sort((a,b)=>b.c-a.c);CBAR('e3',ch.map(x=>x.k),ch.map(x=>x.c),ch.map(x=>x.l),true);CBAR('e4',sg.map(x=>x.k),sg.map(x=>x.c),sg.map(x=>x.l),true);
+ const tot=X.c||1;T('t-ex',[{h:one?'Subclass':'Category',l:1,v:x=>x.k},{h:'Sales '+CY,v:x=>x.c,f:x=>M(x.c)},{h:'Same months '+LYr,v:x=>x.l,f:x=>M(x.l)},{h:'Change',v:x=>x.d,f:x=>'<span class="'+(x.d>=0?'up':'dn')+'">'+M(x.d)+'</span>'},{h:'Growth',v:x=>x.g,f:x=>TR_(x.g)},{h:'Share',v:x=>x.c/tot,f:x=>P(x.c/tot)},{h:'SKUs selling',v:x=>x.n}],tc,60,'No sales in this selection');
+ const I=[],A_=(c,h,t)=>I.push([c,h,t]);
+ if(!(X.c>0||X.l>0))A_('w','No sales in this selection','Widen the filters.');else{
+  if(X.g!=null)A_(X.g<0?'w':'','Sales are '+(X.g>=0?'up ':'down ')+P(Math.abs(X.g))+' versus the same months of '+LYr,M(X.c)+' in '+per()+' against '+M(X.l)+'.');
+  if(LEADM.length&&X.cy.length){const ma=X.c/X.cy.length,la=leadAvg(X);if(la>0)A_(ma<la?'w':'','Monthly run-rate: '+M(ma)+' in '+CY+' vs '+M(la)+' in '+leadTxt(),'The '+CY+' monthly average is '+P(Math.abs(ma/la-1))+(ma>=la?' above':' below')+' the lead-in months.')}
+  const up=tc.filter(x=>x.d>0).sort((a,b)=>b.d-a.d).slice(0,3),dn=tc.filter(x=>x.d<0).sort((a,b)=>a.d-b.d).slice(0,3);if(up.length||dn.length)A_('','Where the change came from',(up.length?'Gains: '+up.map(x=>x.k+' '+M(x.d)).join(', ')+'. ':'')+(dn.length?'Declines: '+dn.map(x=>x.k+' '+M(x.d)).join(', ')+'.':''));
+  if(ch.length>1&&X.c>0){const c0=ch[0],sl=X.l>0?c0.l/X.l:0;A_(c0.c/X.c>.6?'w':'',c0.k+' is '+P(c0.c/X.c)+' of sales ('+P(sl)+' in '+LYr+')','Fastest channel: '+[...ch].filter(x=>x.l>0).sort((a,b)=>b.c/b.l-a.c/a.l).slice(0,1).map(x=>x.k+' '+TR_(x.c/x.l-1)).join('')+'.')}
+  if(sg.length>1&&X.c>0){const s0=sg[0];A_('','Segment mix: '+s0.k+' leads with '+P(s0.c/X.c)+' of sales',sg.slice(0,3).map(x=>x.k+' '+P(x.c/X.c)+' ('+(x.g==null?'new':(x.g>=0?'+':'')+(x.g*100).toFixed(0)+'%')+')').join(', ')+'.')}
+  const sp=spike(X.cy,CYM);if(sp.length)A_('w','Unusually large month: '+sp.map(x=>mlab(x[0])+' '+M(x[1])).join(', '),'More than 2x the typical month. Growth versus last year includes it, so check it is not a one-off.');
+  const ac=[...A.acct].sort((a,b)=>b.c-a.c),at=sm(ac.map(a=>a.c));if(ac.length&&at>0)A_(ac[0].c/at>.25?'w':'','Top account: '+ac[0].k+' is '+P(ac[0].c/at)+' of account sales','Top 5 accounts: '+P(sm(ac.slice(0,5).map(a=>a.c))/at)+'. Lost accounts vs '+LYr+': '+A.acct.filter(a=>a.l>0&&a.c===0).length+'.');
+  const lost=R.filter(o=>o.ytl>0&&!(o.ytd>0));if(lost.length)A_('w',N(lost.length)+' SKUs sold in '+LYr+' have no sales in '+CY,M(sm(lost.map(o=>o.ytl)))+' of last year\'s sales. See Phase-out for what to cut.');
+  if(V.RC.length)A_('r',N(V.RC.filter(x=>x.t==='Phase out').length)+' SKUs recommended for phase-out, '+N(V.RC.filter(x=>x.t==='Review').length)+' to review','Open the Phase-out page for the list and the reasons.')}
+ showI('ins-ex',V.Ie=I)}
+function drawSo(R,S){const X=V.X,n=CYM.length,mm=X.cy.map((v,i)=>[i,v,X.ly[i]>0?v/X.ly[i]-1:null]),bm=[...mm].sort((a,b)=>b[1]-a[1])[0],wm=mm.filter(x=>x[2]!=null).sort((a,b)=>a[2]-b[2])[0];
+ const LYfull=sm(MN.map((_,i)=>sm(R.map(o=>o.sa[LYr+'-'+String(i+1).padStart(2,'0')])))),out=X.c+(LYfull-X.l);
+ $('k-so').innerHTML=kp([['Sales, '+per(),M(X.c),n+' months','','',X.g,spark(X.cy,'#d6322f')],['Same months '+LYr,M(X.l),n+' months'],['Change',M(X.c-X.l),X.c>=X.l?'ahead of last year':'behind last year',X.c>=X.l?'':'w'],
+  ['Average per month',M(n?X.c/n:0),LEADM.length?leadTxt()+' averaged '+M(leadAvg(X)):'vs '+M(n?X.l/n:0)+' in '+LYr,'','',leadAvg(X)>0&&n?(X.c/n)/leadAvg(X)-1:null],['Best month',bm?mlab(CYM[bm[0]]):'-',bm?M(bm[1]):''],['Weakest vs '+LYr,wm?mlab(CYM[wm[0]]):'-',wm?(wm[2]>=0?'+':'')+(wm[2]*100).toFixed(0)+'% vs same month':'']]);
+ $('t-o1').textContent='Monthly sales: '+leadTxt()+' lead-in, then '+CY+' vs '+LYr;$('t-o3').textContent='Sales by channel and month, '+leadTxt()+' to '+mlab(CYM[CYM.length-1])+' '+CY;
+ MBAR('o1',X);
+ const cum=a=>{let t=0;return a.map(v=>t+=v)};
+ mk('o2',{type:'line',data:{labels:CYM.map(mlab),datasets:[{label:String(CY),data:cum(X.cy),borderColor:'#d6322f',backgroundColor:'#d6322f',tension:.25},{label:String(LYr),data:cum(X.ly),borderColor:TH.ly,backgroundColor:TH.ly,tension:.25}]},options:{...OP,scales:{y:{ticks:{callback:v=>M(v)}},x:{grid:{display:false}}},plugins:{legend:{position:'bottom'}}}});
+ const bus=chanSum(R).map(x=>x.k),CC=['#d6322f','#a31f1f','#f0a43a','#9a9aa8'];
+ mk('o3',{type:'bar',data:{labels:[...LEADM,...CYM].map(tl),datasets:bus.map((b,i)=>({label:b,backgroundColor:CC[i%4],maxBarThickness:30,data:[...LEADM,...CYM].map(y=>sm(R.map(o=>o.sb[b]&&o.sb[b][y]))) }))},options:{...OP,scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>M(v)}}},plugins:{legend:{position:'bottom'}}}});
+ const aspC=X.cy.map((v,i)=>X.cq[i]>0?v/X.cq[i]:null),aspL=X.ly.map((v,i)=>X.lq[i]>0?v/X.lq[i]:null);
+ const nl4=Array(LEADM.length).fill(null),nc4=Array(CYM.length).fill(null),aspD=X.ld.map((v,i)=>X.lq2[i]>0?v/X.lq2[i]:null);
+ mk('o4',{type:'line',data:{labels:[...LEADM,...CYM].map(tl),datasets:[{label:'Lead-in',data:[...aspD,...nc4],borderColor:'#f0a43a',backgroundColor:'#f0a43a',tension:.25},{label:LYr+' same months',data:[...nl4,...aspL],borderColor:TH.ly,backgroundColor:TH.ly,tension:.25},{label:String(CY),data:[...nl4,...aspC],borderColor:'#d6322f',backgroundColor:'#d6322f',tension:.25}]},options:{...OP,scales:{y:{ticks:{callback:v=>'₱'+N(v)}},x:{grid:{display:false}}},plugins:{legend:{position:'bottom'}}}});
+ const rows=[...LEADM.map((y,i)=>({m:tl(y)+' (lead-in)',i:i-LEADM.length,c:null,l:X.ld[i],g:null,cu:null,lu:X.lq2[i],ac:null,al:X.lq2[i]>0?X.ld[i]/X.lq2[i]:null})),...CYM.map((y,i)=>({m:tl(y),i,c:X.cy[i],l:X.ly[i],g:X.ly[i]>0?X.cy[i]/X.ly[i]-1:null,cu:X.cq[i],lu:X.lq[i],ac:aspC[i],al:aspL[i]}))];V.mon=rows;
+ T('t-so',[{h:'Month',l:1,v:x=>x.i,f:x=>x.m},{h:'Sales '+CY,v:x=>x.c,f:x=>x.c==null?'-':M(x.c)},{h:'Sales '+LYr,v:x=>x.l,f:x=>M(x.l)},{h:'Change',v:x=>x.c==null?null:x.c-x.l,f:x=>x.c==null?'-':'<span class="'+(x.c>=x.l?'up':'dn')+'">'+M(x.c-x.l)+'</span>'},{h:'Growth',v:x=>x.g,f:x=>TR_(x.g)},
+  {h:'Units '+CY,v:x=>x.cu,f:x=>x.cu==null?'-':N(x.cu)},{h:'Units '+LYr,v:x=>x.lu,f:x=>N(x.lu)},{h:'Price '+CY,v:x=>x.ac,f:x=>R0(x.ac)},{h:'Price '+LYr,v:x=>x.al,f:x=>R0(x.al)}],rows,16);
+ const I=[],A_=(c,h,t)=>I.push([c,h,t]),up=rows.filter(x=>x.g!=null&&x.g>0).length;
+ if(n){A_(up>=n/2?'':'w',up+' of '+n+' months are ahead of '+LYr,bm?'Best month: '+mlab(CYM[bm[0]])+' '+M(bm[1])+'. Weakest versus last year: '+(wm?mlab(CYM[wm[0]])+' ('+(wm[2]*100).toFixed(0)+'%).':'n/a.'):'');
+  if(LEADM.length&&n){const ma=X.c/n,la=leadAvg(X);if(la>0)A_(ma<la?'w':'','2026 monthly average is '+P(Math.abs(ma/la-1))+(ma>=la?' above':' below')+' the '+leadTxt()+' lead-in',M(ma)+' per month in '+CY+' vs '+M(la)+' in the lead-in months.')}
+  if(LYfull>X.l)A_('','Full-year pace: about '+M(out)+' if the remaining months repeat '+LYr,LYr+' full year was '+M(LYfull)+'. A simple pace check, not a forecast.');
+  const sp=spike(X.cy,CYM);if(sp.length)A_('w','Unusually large month: '+sp.map(x=>mlab(x[0])+' '+M(x[1])).join(', '),'More than 2x the typical month. Check it is not a one-off.');
+  if(X.asp&&X.aspl)A_('','Average price is '+(X.asp>=X.aspl?'up ':'down ')+P(Math.abs(X.asp/X.aspl-1))+' vs '+LYr,R0(X.asp)+' per unit against '+R0(X.aspl)+'. Units are '+(X.gu>=0?'up ':'down ')+P(Math.abs(X.gu||0))+'.')}
+ showI('ins-so',V.Iso=I)}
+function drawSp(R,S,one,gk){const X=V.X,st=R.filter(o=>o.perf==='Star'),ri=R.filter(o=>o.perf==='Rising'),dc=R.filter(o=>o.perf==='Declining'),dm=R.filter(o=>o.perf==='Dormant'&&o.st!=='ACTIVE - NEVER OUT');
+ $('k-sp').innerHTML=kp([['Sales, '+per(),M(X.c),'vs '+M(X.l)+' in '+LYr,'','',X.g],['SKUs selling',N(X.sk),'of '+N(R.length)+' in selection'],['Star SKUs',N(st.length),P(X.c>0?sm(st.map(o=>o.ytd))/X.c:0)+' of sales'],['Rising',N(ri.length),'up 30%+, last 3 months'],['Declining',N(dc.length),'down 30%+, last 3 months','w'],['Live, no recent sales',N(dm.length),'none in '+W+' months','r']]);
+ const tc=gsum(R,gk).sort((a,b)=>b.c-a.c).slice(0,10),sg=gsum(R,'seg').sort((a,b)=>b.c-a.c),tp=[...R].filter(o=>o.ytd>0).sort((a,b)=>b.ytd-a.ytd).slice(0,10);
+ $('t-p1').textContent=(one?'Sales by subclass in '+one:'Sales by category, top 10')+': '+CY+' vs '+LYr;
+ CBAR('p1',tc.map(x=>x.k),tc.map(x=>x.c),tc.map(x=>x.l),true);CBAR('p2',sg.map(x=>x.k),sg.map(x=>x.c),sg.map(x=>x.l),true);
+ mk('p3',{type:'bar',data:{labels:tp.map(o=>o.id+' '+o.d.slice(0,14)),datasets:[{data:tp.map(o=>o.ytd),backgroundColor:'#d6322f',maxBarThickness:22}]},options:HB('money')});
+ const PCL=['Star','Rising','Steady','New','Declining','Dormant','No sales','Exited'],PCc=['#2f9e6e','#7bc8a4','#9a9aa8','#6b8fd6','#f0a43a','#d6322f','#c9c9d3','#7a1c1c'],pl=PCL.map(k=>[k,R.filter(r=>r.perf===k).length]).filter(x=>x[1]);
+ mk('p4',{type:'bar',data:{labels:pl.map(x=>x[0]),datasets:[{data:pl.map(x=>x[1]),backgroundColor:pl.map(x=>PCc[PCL.indexOf(x[0])]),maxBarThickness:26}]},options:HB('pct')});
+ const ptag=p=>'<span class="tag '+(p==='Star'||p==='Rising'||p==='New'?'':p==='Declining'||p==='Dormant'?'x':'o')+'">'+p+'</span>';
+ const cols=[{h:'Item',l:1,v:r=>r.id},{h:'Description',l:1,v:r=>r.d,f:r=>esc(r.d)},{h:'Category',l:1,v:r=>r.cls},{h:'Segment',l:1,v:r=>r.seg},{h:'Status',l:1,v:r=>r.st,f:r=>tag(r.st)},{h:'Class',l:1,v:r=>r.perf,f:r=>ptag(r.perf)},
+  {h:'Sales '+CY,v:r=>r.ytd,f:r=>M(r.ytd||0)},{h:'Same months '+LYr,v:r=>r.ytl,f:r=>M(r.ytl||0)},{h:'Growth',v:r=>r.g2,f:r=>TR_(r.g2)},{h:'Units '+CY,v:r=>r.yu,f:r=>N(r.yu||0)},{h:'Accounts '+CY,v:r=>r.nc},{h:'3-month trend',v:r=>r.tr,f:r=>TR_(r.tr)}];
+ T('t-st',cols.filter(c=>c.h!=='Status'),R.filter(r=>r.perf==='Star'||r.perf==='Rising').sort((a,b)=>b.ytd-a.ytd),100,'No Star or Rising SKUs in this selection');
+ if(!SO['t-sk'])SO['t-sk']={i:6,d:-1};T('t-sk',cols,R,300,'No SKUs match the filters');
+ const I=[],A_=(c,h,t)=>I.push([c,h,t]);
+ if(X.c>0){if(st.length)A_('',N(st.length)+' Star SKUs deliver '+P(sm(st.map(o=>o.ytd))/X.c)+' of sales','Top: '+[...st].sort((a,b)=>b.ytd-a.ytd).slice(0,4).map(o=>o.id).join(', ')+'. Protect their stock and availability.');
+  const so=R.map(o=>o.ytd||0).sort((a,b)=>b-a);let c=0,k=0;for(const v of so){c+=v;k++;if(c>=.8*X.c)break}A_('',N(k)+' SKUs make 80% of sales','That is '+P(k/Math.max(1,X.sk))+' of the SKUs that sold. The long tail is where range decisions pay off.');
+  const sg2=sg.filter(x=>x.c>0);if(sg2.length>1){const lv=R.filter(live),sl=sg2.map(x=>({k:x.k,s:x.c/X.c,n:lv.filter(o=>o.seg===x.k).length/Math.max(1,lv.length)})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n)[0];
+   if(sl)A_(sl.n>sl.s+.1?'w':'','Segment '+sl.k+': '+P(sl.n)+' of live SKUs but '+P(sl.s)+' of sales',sl.n>sl.s+.1?'The range here is larger than its sales justify.':'Range and sales are in balance.')}
+  const dn=[...R].filter(o=>o.ytl>0).sort((a,b)=>(a.ytd-a.ytl)-(b.ytd-b.ytl)).slice(0,3),upx=[...R].filter(o=>o.ytd>0).sort((a,b)=>(b.ytd-b.ytl)-(a.ytd-a.ytl)).slice(0,3);
+  if(upx.length)A_('','Biggest gains vs '+LYr,upx.map(o=>o.id+' '+M(o.ytd-o.ytl)).join(', ')+'.');if(dn.length&&dn[0].ytd<dn[0].ytl)A_('w','Biggest declines vs '+LYr,dn.map(o=>o.id+' '+M(o.ytd-o.ytl)).join(', ')+'.');
+  const nar=R.filter(o=>live(o)&&o.ytd>0&&o.nc<=2).length;if(nar)A_('w',N(nar)+' selling SKUs reach only 1-2 accounts','Narrow distribution: either a growth opportunity or a delisting candidate.')}
+ else A_('w','No sales in this selection','Widen the filters.');
+ showI('ins-sp',V.Isp=I)}
+function drawAcc(){const A=V.ACC,tot=sm(A.acct.map(a=>a.c)),totl=sm(A.acct.map(a=>a.l)),g=totl>0?tot/totl-1:null,act=A.acct.filter(a=>a.c>0),actl=A.acct.filter(a=>a.l>0).length,lost=A.acct.filter(a=>a.l>0&&a.c===0),nw=A.acct.filter(a=>a.c>0&&a.l===0),ts=[...A.acct].sort((a,b)=>b.c-a.c),top10=sm(ts.slice(0,10).map(a=>a.c));
+ $('count').textContent=N(act.length)+' accounts and '+N(A.area.length)+' areas in this selection';$('anote').textContent='Account charts and tables use the Brand and Category filters. Top SKUs per area uses all the SKU filters.';
+ const mon=CYM.map(y=>sm(A.rows.filter(r=>r.ym===y).map(r=>r.s)));
+ $('k-ac').innerHTML=kp([['Sales, '+per(),M(tot),'vs '+M(totl)+' same months '+LYr,'','',g,spark(mon,'#d6322f')],['Accounts buying',N(act.length),'vs '+N(actl)+' in '+LYr,'','',actl>0?act.length/actl-1:null],['Top 10 accounts',P(tot>0?top10/tot:0),'of account sales'],
+  ['New accounts',N(nw.length),M(sm(nw.map(a=>a.c)))+' sales in '+CY],['Lost accounts',N(lost.length),M(sm(lost.map(a=>a.l)))+' sales in '+LYr,lost.length?'r':''],['Average per account',M(act.length?tot/act.length:0),'vs '+M(actl?totl/actl:0)+' in '+LYr]]);
+ const ar=[...A.area].sort((a,b)=>b.c-a.c),ty=[...A.acls].sort((a,b)=>b.c-a.c),bu=[...A.bu].sort((a,b)=>b.c-a.c);
+ $('t-a1').textContent='Sales by area: '+CY+' vs '+LYr;$('t-a2').textContent='Top 10 accounts: '+CY+' vs '+LYr;$('t-a3').textContent='Account type: '+CY+' vs '+LYr;$('t-a4').textContent='Channel: '+CY+' vs '+LYr;
+ CBAR('a1',ar.map(x=>x.k),ar.map(x=>x.c),ar.map(x=>x.l),true);CBAR('a2',ts.slice(0,10).map(x=>x.k),ts.slice(0,10).map(x=>x.c),ts.slice(0,10).map(x=>x.l),true);CBAR('a3',ty.map(x=>x.k),ty.map(x=>x.c),ty.map(x=>x.l),true);CBAR('a4',bu.map(x=>x.k),bu.map(x=>x.c),bu.map(x=>x.l),true);
+ const gcols=(lab)=>[{h:'Sales '+CY,v:x=>x.c,f:x=>M(x.c)},{h:'Same months '+LYr,v:x=>x.l,f:x=>M(x.l)},{h:'Change',v:x=>x.d,f:x=>'<span class="'+(x.d>=0?'up':'dn')+'">'+M(x.d)+'</span>'},{h:'Growth',v:x=>x.g,f:x=>TR_(x.g)},{h:'Share',v:x=>tot>0?x.c/tot:0,f:x=>P(tot>0?x.c/tot:0)}];
+ T('t-ar',[{h:'Area',l:1,v:x=>x.k},...gcols(),{h:'Active accounts',v:x=>x.na},{h:'Avg per account',v:x=>x.na?x.c/x.na:null,f:x=>x.na?M(x.c/x.na):'-'}],ar,20,'No areas');
+ const stN={};SF.forEach(r=>{if(CYS.has(r.ym)&&r.s>0)(stN[r.acct]=stN[r.acct]||new Set).add(r.store)});
+ T('t-ac',[{h:'Account',l:1,v:x=>x.k},{h:'Type',l:1,v:x=>x.type},{h:'Area',l:1,v:x=>x.area},...gcols(),{h:'Stores selling',v:x=>stN[x.k]?stN[x.k].size:0},{h:'Categories',v:x=>x.nc}],ts,300,'No accounts');
+ const sr=new Map();SF.forEach(r=>{if(!(CYS.has(r.ym)||LYS.has(r.ym)))return;const a2=AREAOF[r.acct]||'Unassigned';if(SEL.acct.size&&!SEL.acct.has(r.acct))return;if(SEL.area.size&&!SEL.area.has(a2))return;const k=r.acct+'|'+r.store;let o=sr.get(k);if(!o){o={k:r.store,acct:r.acct,area:a2,c:0,l:0};sr.set(k,o)}if(CYS.has(r.ym))o.c+=r.s;else o.l+=r.s});
+ const sl=[...sr.values()].map(o=>({...o,d:o.c-o.l,g:o.l>0?o.c/o.l-1:null})).sort((a,b)=>b.c-a.c);V.stores=sl;
+ T('t-sr',[{h:'Store',l:1,v:x=>x.k},{h:'Account',l:1,v:x=>x.acct},{h:'Area',l:1,v:x=>x.area},{h:'Sales '+CY,v:x=>x.c,f:x=>M(x.c)},{h:'Same months '+LYr,v:x=>x.l,f:x=>M(x.l)},{h:'Change',v:x=>x.d,f:x=>'<span class="'+(x.d>=0?'up':'dn')+'">'+M(x.d)+'</span>'},{h:'Growth',v:x=>x.g,f:x=>TR_(x.g)}],sl,300,'No stores');
+ V.ta=topAreas();$('ta-grid').innerHTML=V.ta.map(rankCard).join('')||'<p class="note">No area data for the current SKU filters.</p>';
+ const I=[],A_=(c,h,t)=>I.push([c,h,t]);
+ if(tot>0||totl>0){if(g!=null)A_(g<0?'w':'','Account sales are '+(g>=0?'up ':'down ')+P(Math.abs(g))+' vs '+LYr,M(tot)+' against '+M(totl)+' in the same months.');
+  if(ts.length&&tot>0)A_(ts[0].c/tot>.25?'w':'','Top account: '+ts[0].k+' is '+P(ts[0].c/tot)+' of sales','Top 5: '+ts.slice(0,5).map(a=>a.k).join(', ')+' = '+P(sm(ts.slice(0,5).map(a=>a.c))/tot)+'. Agree range changes with them first.');
+  const up=ar.filter(x=>x.g!=null&&x.l>0).sort((a,b)=>b.g-a.g);if(up.length>1)A_('','Areas: strongest '+up[0].k+' '+TR_(up[0].g)+', weakest '+up[up.length-1].k+' '+TR_(up[up.length-1].g),'Largest area: '+ar[0].k+' with '+P(tot>0?ar[0].c/tot:0)+' of sales.');
+  if(lost.length)A_('r',N(lost.length)+' accounts bought in '+LYr+' but not in '+CY,'Worth '+M(sm(lost.map(a=>a.l)))+' last year. Largest: '+[...lost].sort((a,b)=>b.l-a.l).slice(0,3).map(a=>a.k+' '+M(a.l)).join(', ')+'.');
+  if(nw.length)A_('',N(nw.length)+' new accounts in '+CY,M(sm(nw.map(a=>a.c)))+' in sales. Largest: '+[...nw].sort((a,b)=>b.c-a.c).slice(0,3).map(a=>a.k).join(', ')+'.');
+  const dn=[...ty].filter(x=>x.g!=null&&x.l>0).sort((a,b)=>a.g-b.g)[0];if(dn&&dn.g<0)A_('w','Weakest account type: '+dn.k+' '+TR_(dn.g),M(dn.c)+' vs '+M(dn.l)+' last year.');
+  const dead=sl.filter(x=>x.l>0&&x.c===0);if(dead.length)A_('w',N(dead.length)+' stores sold in '+LYr+' but nothing in '+CY,M(sm(dead.map(x=>x.l)))+' of last year\'s sales across all products.')}
+ else A_('w','No account sales in this selection','Widen the filters.');
+ if(V.ta.length){A_('','Top SKU by area',V.ta.map(t=>t.a+': '+(t.rows[0]?t.rows[0].o.id:'-')).join(' | '));const all=V.ta.length>1?V.ta[0].rows.map(y=>y.o.id).filter(id=>V.ta.every(t=>t.rows.some(y=>y.o.id===id))):[];if(all.length)A_('',N(all.length)+' SKUs rank in the top 10 of every area',all.slice(0,6).join(', ')+'. These are your national best sellers.')}
+ showI('ins-ac',V.Iac=I)}
+// ---------- draw
+function go(p){PG=p;document.querySelectorAll('.side nav button').forEach(x=>x.classList.toggle('on',x.dataset.p===p));['ex','so','sp','sa','ov','cat','po'].forEach(q=>$('p-'+q).classList.toggle('hide',q!==p));const b=document.querySelector('.side nav button[data-p="'+p+'"]');$('ptitle').textContent=b.dataset.t;$('crumb').textContent=b.dataset.g;$('shell').classList.remove('open');if(window.scrollTo)window.scrollTo(0,0);if(D.length)draw()}
+function draw(){FK.forEach(([k,l])=>{const b=$('ms-'+k).querySelector('.msb');b.textContent=l+': '+(SEL[k].size?SEL[k].size+' selected':'All');b.classList.toggle('act',SEL[k].size>0);$('ms-'+k).classList.toggle('hide',FK.find(f=>f[0]===k)[2]==='a'&&PG!=='sa')});$('ftog').textContent='Filters'+(FK.filter(f=>SEL[f[0]].size).length?' ('+FK.filter(f=>SEL[f[0]].size).length+')':'');
+ const R=D.filter(r=>pass(r));V.R=R;$('count').textContent=N(R.length)+' of '+N(D.length)+' SKUs match the filters';
+ const S=stat(R),sel=new Set(R.map(r=>r.par)),one=SEL.cls.size===1?[...SEL.cls][0]:null,gk=one?'sub':'cls',pars=[...sel];
+ V.catTop=[];V.catSub={};const byC=new Map();R.forEach(r=>{(byC.get(r.cls)||byC.set(r.cls,[]).get(r.cls)).push(r)});
+ [...byC].forEach(([c,rows])=>{V.catTop.push({c,sub:'',s:stat(rows)});const bs=new Map();rows.forEach(r=>{(bs.get(r.sub)||bs.set(r.sub,[]).get(r.sub)).push(r)});V.catSub[c]=[...bs].sort((a,b)=>b[1].length-a[1].length).map(([s,x])=>({c,sub:s,s:stat(x)}))});
+ V.catTop.sort((a,b)=>b.s.n-a.s.n);
+ V.A=pars.filter(p=>PF[p].live.length&&PF[p].ex.length);V.C=pars.filter(p=>PF[p].live.length>=3);V.B=R.filter(r=>r.st==='SLOW MOVING');
+ V.RC=HAS.t?R.filter(r=>r.st!=='ACTIVE - NEVER OUT'&&live(r)).map(rec).filter(x=>x.t!=='Keep').sort((a,b)=>b.s-a.s||(a.r.sales||0)-(b.r.sales||0)):[];
+ if(HAS.s){V.X=SX(R);V.ACC=accAgg()}
+ ['ex','so','sp','sa'].forEach(p=>$('p-'+p).classList.toggle('nod',!HAS.s));
+ ({ex:()=>HAS.s&&drawEx(R,S,one,gk),so:()=>HAS.s&&drawSo(R,S),sp:()=>HAS.s&&drawSp(R,S,one,gk),sa:()=>HAS.s&&drawAcc(),ov:()=>drawOv(R,S,one,gk),cat:drawCat,po:()=>drawPo(R,S,pars,one,gk)})[PG]()}
+function drawOv(R,S,one,gk){
+ $('k-ov').innerHTML=kp([['SKUs',N(S.n),N(S.par)+' parents'],['Live SKUs',N(S.lv),P(S.lp)+' of selection'],['Phased out / obsolete',N(S.ex),P(S.n?S.ex/S.n:0)+' of selection',S.ex/(S.n||1)>.5?'w':''],
+  ['Slow moving',N(S.c.get('SLOW MOVING')||0),'live but at risk','w'],['Avg SRP',R0(S.srp),'SKUs with a price'],['Avg dealer margin',PC(S.m),'1 - DP / SRP'],
+  ['Live SKUs with a Q2 promo',N(S.pr),'of '+N(S.lv)+' live SKUs ('+P(S.lv?S.pr/S.lv:0)+')','','Counted from the Q2 PROMOTIONS column of the SKU master: a live SKU with any entry there (for example 10+2) counts as having a Q2 promo. It does not measure promo sales.']]);
+ const si=STP.map(s=>[s,ST.indexOf(s)]).filter(x=>S.c.get(x[0]));
+ mk('c1',{type:'bar',data:{labels:si.map(x=>x[0]),datasets:[{data:si.map(x=>S.c.get(x[0])),backgroundColor:si.map(x=>SC[x[1]]),maxBarThickness:28}]},options:HB('pct')});
+ const g=[...cnt(R,gk)].sort((a,b)=>b[1]-a[1]).slice(0,12).map(x=>x[0]);$('t2').textContent=one?'SKUs by subclass in '+one+' (by status)':'SKUs by category (by status), top 12';
+ mk('c2',{type:'bar',data:{labels:g,datasets:STP.map(s=>({label:s,backgroundColor:SC[ST.indexOf(s)],maxBarThickness:24,data:g.map(x=>R.filter(r=>r[gk]===x&&r.st===s).length)}))},options:HB('total',{x:{stacked:true},y:{stacked:true},leg:1})});
+ const b=[...cnt(R,'brand')].sort((a,c)=>c[1]-a[1]).slice(0,10);
+ mk('c3',{type:'bar',data:{labels:b.map(x=>x[0]),datasets:[{data:b.map(x=>x[1]),backgroundColor:'#a31f1f',maxBarThickness:24}]},options:HB('val')});
+ const bd=[['Under 500',0,500],['500-1,499',500,1500],['1,500-2,999',1500,3000],['3,000-4,999',3000,5000],['5,000+',5000,1e12]];
+ mk('c4',{type:'bar',data:{labels:[...bd.map(x=>x[0]),'No price'],datasets:[{data:[...bd.map(x=>R.filter(r=>r.srp>=x[1]&&r.srp<x[2]).length),R.filter(r=>!(r.srp>0)).length],backgroundColor:'#e8605c',borderRadius:6,maxBarThickness:46}]},options:{...OP,vals:'val',scales:{y:{display:false,beginAtZero:true},x:{grid:{display:false}}},plugins:{legend:{display:false}}}});
+ {const lvR=R.filter(live),tY=sm(R.map(o=>o.ytd)),rows=[...new Set(R.map(o=>o.seg))].map(k=>({k,a:lvR.filter(o=>o.seg===k).length,b:sm(R.filter(o=>o.seg===k).map(o=>o.ytd))})).sort((x,y)=>y.b-x.b||y.a-x.a);
+  mk('c12',{type:'bar',data:{labels:rows.map(x=>x.k),datasets:[{label:'Share of live SKUs',data:rows.map(x=>lvR.length?x.a/lvR.length:0),backgroundColor:TH.ly,maxBarThickness:14},{label:'Share of sales',data:rows.map(x=>tY?x.b/tY:0),backgroundColor:'#d6322f',maxBarThickness:14}]},options:HB('pv',{leg:1})})}
+ const I=[],A=(c,h,t)=>I.push([c,h,t]);
+ if(!R.length)A('w','No SKUs match the current filters','Use Remove all filters to start again.');
+ else{const p=S.ex/S.n;A(p>.5?'w':'',P(p)+' of SKUs are phased out or obsolete','Live range: '+N(S.lv)+' SKUs across '+N(new Set(R.filter(live).map(r=>r.par)).size)+' parents.');
+  if(V.A.length)A('w',N(V.A.length)+' parents have both live and exited children','These variant exits are the pattern for the remaining parents. See the Phase-out page.');
+  if(V.C.length)A('r',plural(V.C.length,'parent carries','parents carry')+' 3 or more live children','Widest: '+V.C.slice(0,4).map(x=>x+' ('+PF[x].live.length+')').join(', ')+'.');
+  const sl=[...cnt(V.B,'cls')].sort((a,b)=>b[1]-a[1])[0];if(sl)A('w',N(V.B.length)+' SKUs are slow moving','Most in '+sl[0]+' ('+sl[1]+').');
+  const mg=V.catTop.filter(x=>x.s.lv>=5&&x.s.m!==null).sort((a,b)=>a.s.m-b.s.m).slice(0,3);if(mg.length)A('','Lowest dealer margin among categories with 5+ live SKUs',mg.map(x=>x.c+' '+PC(x.s.m)).join(', ')+'.');
+  if(S.lv&&HAS.p)A('',P(S.pr/S.lv)+' of live SKUs have a Q2 promo entry',N(S.lv-S.pr)+' live SKUs have none. Source: Q2 PROMOTIONS column.');
+  A('o','Data checks',N(DUP)+' repeated item codes dropped on import; '+N(R.filter(r=>r.st==='UNSPECIFIED').length)+' SKUs without status; '+N(R.filter(r=>!(r.srp>0)||!(r.dp>0)).length)+' without a usable SRP or DP in this selection.')}
+ showI('ins',V.I=I);
+ T('t-sku',[{h:'Item',l:1,v:r=>r.id},{h:'Parent',l:1,v:r=>r.par},{h:'Description',l:1,v:r=>r.d,f:r=>esc(r.d)},{h:'Brand',l:1,v:r=>r.brand},{h:'Category',l:1,v:r=>r.cls},{h:'Subclass',l:1,v:r=>r.sub},
+  {h:'Status',l:1,v:r=>r.st,f:r=>tag(r.st)},{h:'SRP',v:r=>r.srp,f:r=>R0(r.srp)},{h:'DP',v:r=>r.dp,f:r=>R0(r.dp)},{h:'Margin',v:r=>r.m,f:r=>PC(r.m)},{h:'Q2 promo',p:1,l:1,v:r=>r.promo,f:r=>esc(r.promo)},{h:'Segment',l:1,v:r=>r.seg}],R,300,'No SKUs match the filters')}
+function drawCat(){const cols=[{h:'Category',l:1,v:r=>r.c,f:r=>r.sub?esc(r.sub):(OPEN.has(r.c)?'▾ ':'▸ ')+esc(r.c)},{h:'SKUs',v:r=>r.s.n,f:r=>N(r.s.n)},{h:'Parents',v:r=>r.s.par,f:r=>N(r.s.par)},
+  ...[['Active','ACTIVE'],['Never out','ACTIVE - NEVER OUT'],['Slow','SLOW MOVING'],['Phased out','PHASED OUT'],['Obsolete','OBSOLETE']].map(([h,k])=>({h,v:r=>r.s.c.get(k)||0,f:r=>N(r.s.c.get(k)||0)})),
+  {h:'Live share',v:r=>r.s.lp,f:r=>'<span class="bar" style="width:'+Math.round(r.s.lp*60)+'px"></span>'+P(r.s.lp)},{h:'Avg SRP',v:r=>r.s.srp,f:r=>R0(r.s.srp)},{h:'Margin',v:r=>r.s.m,f:r=>PC(r.s.m),t:'Dealer margin: 1 - DP / SRP'},
+  {h:'Live with Q2 promo',v:r=>r.s.pr,f:r=>N(r.s.pr),t:'Live SKUs with an entry in the Q2 PROMOTIONS column'},{h:'Mixed-status parents',v:r=>r.s.mix,f:r=>N(r.s.mix)},{h:'Parents 3+ live',v:r=>r.s.wide,f:r=>N(r.s.wide)}];
+ if(HAS.s)cols.push({h:'Sales',v:r=>r.s.sl,f:r=>M(r.s.sl)});if(HAS.g)cols.push({h:'Gross profit',v:r=>r.s.gp,f:r=>M(r.s.gp)},{h:'GP %',v:r=>r.s.gpm,f:r=>PC(r.s.gpm)});if(HAS.t)cols.push({h:'Sales trend',v:r=>r.s.tr,f:r=>TR_(r.s.tr),t:'Last '+W+' months vs the '+W+' months before'},{h:'Vs last year',v:r=>r.s.yy,f:r=>TR_(r.s.yy),t:'Last '+W+' months vs the same months a year earlier'});
+ if(!HAS.p)cols.splice(cols.findIndex(c=>c.h==='Live with Q2 promo'),1);T('t-cat',cols,V.catTop,500,'No categories match the filters',{rc:r=>'class="cr" data-c="'+esc(r.c)+'"',subs:r=>OPEN.has(r.c)?V.catSub[r.c]:[],after:()=>$('t-cat').querySelectorAll('tr.cr').forEach(tr=>tr.onclick=()=>{const c=tr.dataset.c;OPEN.has(c)?OPEN.delete(c):OPEN.add(c);TRR['t-cat']()})});
+ const I=[],A=(c,h,t)=>I.push([c,h,t]),Tt=V.catTop,tot=Tt.reduce((a,x)=>a+x.s.n,0);
+ if(!Tt.length)A('w','No categories match the current filters','Use Remove all filters to start again.');
+ else{A('',Tt[0].c+' is the largest category: '+N(Tt[0].s.n)+' SKUs ('+P(Tt[0].s.n/tot)+')','Top 3: '+Tt.slice(0,3).map(x=>x.c+' '+N(x.s.n)).join(', ')+'.');
+  const dead=Tt.filter(x=>x.s.lv===0);if(dead.length)A('r',plural(dead.length,'category has','categories have')+' no live SKUs left',dead.slice(0,6).map(x=>x.c+' ('+x.s.n+')').join(', ')+(dead.length>6?', and more':'')+'. Candidates to close out.');
+  const hi=Tt.filter(x=>x.s.n>=10&&x.s.lv>0).sort((a,b)=>a.s.lp-b.s.lp).slice(0,3);if(hi.length)A('w','Highest exited share (10+ SKUs, still live)',hi.map(x=>x.c+' '+P(1-x.s.lp)+' exited, '+x.s.lv+' live').join('; ')+'.');
+  const mx=Tt.filter(x=>x.s.mix>0).sort((a,b)=>b.s.mix-a.s.mix).slice(0,3);if(mx.length)A('w','Most parents with mixed live and exited children',mx.map(x=>x.c+' ('+x.s.mix+')').join(', ')+'.');
+  const wd=Tt.filter(x=>x.s.wide>0);if(wd.length)A('r','Wide ranges (3+ live children per parent)',wd.map(x=>x.c+' ('+x.s.wide+')').join(', ')+'.');
+  const mg=Tt.filter(x=>x.s.lv>=5&&x.s.m!==null).sort((a,b)=>a.s.m-b.s.m);if(mg.length>1)A('','Dealer margin spread','Lowest: '+mg.slice(0,2).map(x=>x.c+' '+PC(x.s.m)).join(', ')+'. Highest: '+mg.slice(-2).reverse().map(x=>x.c+' '+PC(x.s.m)).join(', ')+'.');
+  if(HAS.t){const dn=Tt.filter(x=>x.s.tr!==null&&x.s.sl>0).sort((a,b)=>a.s.tr-b.s.tr).slice(0,3);if(dn.length)A('w','Weakest sales trend (last '+W+' months vs prior)',dn.map(x=>x.c+' '+(x.s.tr*100).toFixed(0)+'%').join(', ')+'.')}}
+ showI('ins-cat',V.Ic=I)}
+function drawPo(R,S,pars,one,gk){const full=pars.filter(p=>!PF[p].live.length&&PF[p].ex.length).length,ft=p=>PF[p].rows[0],ids=(p,a)=>PF[p][a].join(', ');
+ const ph=V.RC.filter(x=>x.t==='Phase out').length,rv=V.RC.length-ph;
+ $('k-po').innerHTML=kp([['Phased out / obsolete',N(S.ex),P(S.n?S.ex/S.n:0)+' of selection'],['Parents fully exited',N(full),'no live children left'],['Variant phase-outs',N(V.A.length),'live and exited children','w'],['Slow moving SKUs',N(V.B.length),'watchlist','w'],['Parents, 3+ live children',N(V.C.length),'range review candidates','r'],
+  ...(HAS.t?[['Recommended to phase out',N(ph),'score 5 or more','r'],['To review',N(rv),'score 3 or 4','w']]:[])]);
+ const g=[...cnt(R,gk)].map(x=>x[0]).sort((a,b)=>R.filter(r=>r[gk]===b&&ex(r)).length-R.filter(r=>r[gk]===a&&ex(r)).length).slice(0,12);
+ $('t5').textContent=one?'Live vs exited SKUs by subclass in '+one:'Live vs exited SKUs by category, top 12 by exited';
+ mk('c5',{type:'bar',data:{labels:g,datasets:[['Live',live,'#2f9e6e'],['Phased out / obsolete',ex,'#d6322f']].map(d=>({label:d[0],backgroundColor:d[2],maxBarThickness:22,data:g.map(k=>R.filter(r=>r[gk]===k&&d[1](r)).length)}))},options:HB('total',{x:{stacked:true},y:{stacked:true},leg:1})});
+ $('h-r').textContent='Recommended phase-out candidates'+(HAS.t?' ('+V.RC.length+' SKUs)':'');
+ $('rec-note').innerHTML=HAS.t?'Live SKUs only; ACTIVE - NEVER OUT is protected and excluded. Each SKU gets points: slow moving +2; sales trend down 30% or more +2 (10-30% +1); no sales in the last '+W+' months +3; under 20% of its parent\'s live sales +2 (under 35% +1); gross margin 5 points below the category median +1. <b>5+ = Phase out, 3-4 = Review.</b> A guide for the decision, not the decision: check account overlap and stock first.':'Add at least 6 months of sales (a SALES BY MONTH sheet) to get trend-based recommendations.';
+ if(HAS.t)T('t-r',[{h:'Item',l:1,v:x=>x.r.id},{h:'Parent',l:1,v:x=>x.r.par},{h:'Description',l:1,v:x=>x.r.d,f:x=>esc(x.r.d)},{h:'Category',l:1,v:x=>x.r.cls},{h:'Status',l:1,v:x=>x.r.st,f:x=>tag(x.r.st)},{h:'Segment',l:1,v:x=>x.r.seg},{h:'Accounts '+CY,v:x=>x.r.nc},
+  {h:'Sales',v:x=>x.r.sales,f:x=>M(x.r.sales||0)},{h:'Trend',v:x=>x.r.tr,f:x=>TR_(x.r.tr)},{h:'Share of parent',v:x=>x.sh,f:x=>x.sh==null?'-':PC(x.sh)},{h:'GP %',v:x=>x.r.gpm,f:x=>PC(x.r.gpm)},
+  {h:'Live siblings',v:x=>PF[x.r.par].live.length-1},{h:'Why',l:1,w:1,v:x=>x.w},{h:'Score',v:x=>x.s},{h:'Recommendation',l:1,v:x=>x.t,f:x=>'<span class="tag '+(x.t==='Phase out'?'x':'s')+'">'+x.t+'</span>'}],V.RC,200,'No SKUs reach the review threshold in this selection');
+ else $('t-r').innerHTML='';
+ $('h-a').textContent='Variant phase-outs ('+V.A.length+' parents)';$('h-c').textContent='Wide ranges, 3+ live children ('+V.C.length+' parents)';$('h-b').textContent='Slow-moving watchlist ('+V.B.length+' SKUs)';
+ T('t-a',[{h:'Parent',l:1,v:p=>p},{h:'Category',l:1,v:p=>ft(p).cls},{h:'Description',l:1,v:p=>ft(p).d,f:p=>esc(ft(p).d)},{h:'Live',v:p=>PF[p].live.length},{h:'Exited',v:p=>PF[p].ex.length},{h:'Live children',l:1,w:1,v:p=>ids(p,'live')},{h:'Exited children',l:1,w:1,v:p=>ids(p,'ex')}],V.A,200);
+ T('t-c',[{h:'Parent',l:1,v:p=>p},{h:'Category',l:1,v:p=>ft(p).cls},{h:'Description',l:1,v:p=>ft(p).d,f:p=>esc(ft(p).d)},{h:'Live children',v:p=>PF[p].live.length},{h:'Exited',v:p=>PF[p].ex.length},{h:'Live child SKUs',l:1,w:1,v:p=>ids(p,'live')}],V.C,200);
+ T('t-b',[{h:'Item',l:1,v:r=>r.id},{h:'Parent',l:1,v:r=>r.par},{h:'Description',l:1,v:r=>r.d,f:r=>esc(r.d)},{h:'Category',l:1,v:r=>r.cls},{h:'Live siblings',v:r=>PF[r.par].live.length-1},{h:'SRP',v:r=>r.srp,f:r=>R0(r.srp)},{h:'Margin',v:r=>r.m,f:r=>PC(r.m)},{h:'Q2 promo',p:1,l:1,v:r=>r.promo,f:r=>esc(r.promo)}],V.B,200);
+ const I=[],A=(c,h,t)=>I.push([c,h,t]);
+ if(!R.length)A('w','No SKUs match the current filters','Use Remove all filters to start again.');
+ else{A(S.ex/S.n>.5?'w':'',P(S.ex/S.n)+' of SKUs in this selection are exited',plural(full,'parent is','parents are')+' fully exited ('+P(pars.length?full/pars.length:0)+' of parents).');
+  if(HAS.t){if(ph)A('r',N(ph)+' SKUs are recommended for phase-out and '+N(rv)+' for review','Top: '+V.RC.filter(x=>x.t==='Phase out').slice(0,4).map(x=>x.r.id).join(', ')+'. Scores come from status, sales trend, share of parent and margin.');else A('','No SKU reaches the phase-out score in this selection',N(rv)+' SKUs are on the review list.');
+   const d=V.RC.filter(x=>x.r.rs===0).length;if(d)A('r',plural(d,'SKU has','SKUs have')+' no sales in the last '+W+' months','These are the clearest cuts unless they are Never Out items or new launches.')}
+  if(V.A.length){const wd=w=>{const m=new Map();V.A.forEach(p=>PF[p].rows.filter(w).forEach(r=>{const k=(r.d.trim().split(/\s+/).pop()||'').toUpperCase();if(/^[A-Z]{3,}$/.test(k))m.set(k,(m.get(k)||0)+1)}));return[...m].sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0]+' ('+x[1]+')').join(', ')};
+   A('w',plural(V.A.length,'parent shows','parents show')+' a variant cut already','Last word of the description on exited children: '+(wd(ex)||'n/a')+'. On children that stayed live: '+(wd(live)||'n/a')+'.')}
+  if(V.C.length)A('r',plural(V.C.length,'parent carries','parents carry')+' 3 or more live children','Widest: '+V.C.slice(0,4).map(x=>x+' ('+PF[x].live.length+')').join(', ')+'.');
+  if(V.B.length){const sib=V.B.filter(r=>PF[r.par].live.length>1).length;A('w',N(sib)+' of '+N(V.B.length)+' slow-moving SKUs have a live sibling','Demand can shift to the sibling, so these are the easiest cuts. '+N(V.B.length-sib)+' have no live sibling.')}
+  const ec=[...cnt(R.filter(ex),'cls')].sort((a,b)=>b[1]-a[1]).slice(0,3);if(ec.length)A('','Most exited SKUs by category',ec.map(x=>x[0]+' ('+N(x[1])+')').join(', ')+'.');
+  if(!HAS.t)A('o','Recommendations need sales','Add monthly SALES columns (6+ months) to switch on trend-based phase-out recommendations.')}
+ showI('ins-po',V.Ip=I)}
+function exportX(){if(!D.length)return;const wb=XLSX.utils.book_new(),add=(n,a)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(a),n),ft=p=>PF[p].rows[0];
+ add('SKUs',V.R.map(r=>({Item:r.id,Parent:r.par,Description:r.d,Brand:r.brand,Category:r.cls,Subclass:r.sub,Status:r.st,SRP:r.srp,DP:r.dp,Margin:r.m,'Q2 promo':r.promo,Segment:r.seg,Sales:r.sales,'Gross profit':r.gp,'GP %':r.gpm,'Last months':r.rs,'Prior months':r.ps,Trend:r.tr,Performance:r.perf,Units:r.qty})));
+ add('Category summary',V.catTop.flatMap(x=>[x,...V.catSub[x.c]]).map(x=>({Category:x.c,Subclass:x.sub||'(all)',SKUs:x.s.n,Parents:x.s.par,Active:x.s.c.get('ACTIVE')||0,'Never out':x.s.c.get('ACTIVE - NEVER OUT')||0,Slow:x.s.c.get('SLOW MOVING')||0,'Phased out':x.s.c.get('PHASED OUT')||0,Obsolete:x.s.c.get('OBSOLETE')||0,'Live share':x.s.lp,'Avg SRP':x.s.srp,Margin:x.s.m,'Live with Q2 promo':x.s.pr,'Mixed-status parents':x.s.mix,'Parents 3+ live':x.s.wide,Sales:x.s.sl,'Gross profit':x.s.gp,'GP %':x.s.gpm,Trend:x.s.tr})));
+ if(HAS.t)add('Phase-out recommendations',V.RC.map(x=>({Item:x.r.id,Parent:x.r.par,Description:x.r.d,Category:x.r.cls,Status:x.r.st,Sales:x.r.sales,Trend:x.r.tr,'Share of parent':x.sh,'GP %':x.r.gpm,Score:x.s,Recommendation:x.t,Why:x.w})));
+ add('Variant phase-outs',V.A.map(p=>({Parent:p,Category:ft(p).cls,Description:ft(p).d,'Live children':PF[p].live.join(', '),'Exited children':PF[p].ex.join(', ')})));
+ add('Wide ranges',V.C.map(p=>({Parent:p,Category:ft(p).cls,Description:ft(p).d,'Live count':PF[p].live.length,'Live children':PF[p].live.join(', ')})));
+ add('Slow moving',V.B.map(r=>({Item:r.id,Parent:r.par,Description:r.d,Category:r.cls,'Live siblings':PF[r.par].live.length-1,SRP:r.srp,Margin:r.m})));
+ if(HAS.s){const pg=PG;['so','sa'].forEach(p=>{PG=p;draw()});PG=pg;draw();
+  add('Sales by month',(V.mon||[]).map(x=>({Month:x.m,['Sales '+CY]:x.c,['Sales '+LYr]:x.l,Growth:x.g,['Units '+CY]:x.cu,['Units '+LYr]:x.lu})));
+  add('Accounts',V.ACC.acct.map(a=>({Account:a.k,Type:a.type,Area:a.area,['Sales '+CY]:a.c,['Sales '+LYr]:a.l,Change:a.d,Growth:a.g,Categories:a.nc})));
+  add('Areas',V.ACC.area.map(a=>({Area:a.k,['Sales '+CY]:a.c,['Sales '+LYr]:a.l,Growth:a.g,'Active accounts':a.na})));
+  add('Stores',(V.stores||[]).map(x=>({Store:x.k,Account:x.acct,Area:x.area,['Sales '+CY]:x.c,['Sales '+LYr]:x.l,Growth:x.g})));
+  add('Top SKUs per area',(V.ta||[]).flatMap(t=>t.rows.map((y,i)=>({Area:t.a,Rank:i+1,Item:y.o.id,Description:y.o.d,['Sales '+CY]:y.c,['Sales '+LYr]:y.l,'Share of area':t.tot>0?y.c/t.tot:0}))))}
+ add('Analyzer findings',[['Executive summary',V.Ie],['Sales overview',V.Iso],['Products',V.Isp],['Accounts & areas',V.Iac],['SKU overview',V.I],['Category summary',V.Ic],['Phase-out',V.Ip]].flatMap(([p,a])=>(a||[]).map(i=>({Page:p,Finding:String(i[1]).replace(/<[^>]+>/g,''),Detail:String(i[2]).replace(/<[^>]+>/g,'')}))));XLSX.writeFile(wb,'KBMC_SKU_Dashboard_Export.xlsx')}
+document.querySelectorAll('.side nav button').forEach(b=>b.onclick=()=>go(b.dataset.p));
+document.querySelectorAll('.gh').forEach(b=>b.onclick=()=>b.parentNode.classList.toggle('closed'));
+$('min').onclick=()=>{const m=$('shell').classList.toggle('min');try{localStorage.setItem('kbmcMin',m?'1':'0')}catch(e){}};
+$('hb').onclick=()=>$('shell').classList.toggle('open');$('bd').onclick=()=>$('shell').classList.remove('open');$('ftog').onclick=()=>$('filters').classList.toggle('open');
+try{if(localStorage.getItem('kbmcMin')==='1')$('shell').classList.add('min')}catch(e){}
+try{theme(localStorage.getItem('kbmcTheme')==='d')}catch(e){theme(false)}
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(D.length)draw()});
+</script></body></html>
